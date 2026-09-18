@@ -200,6 +200,11 @@ export class DriveScene extends Phaser.Scene {
     const pinActive = !!stopId && this.sys.isActive();
     const pinPhase = pinActive ? 0.5 + 0.5 * Math.sin((snap.gameMs / PIN_CYCLE_MS) * Math.PI * 2) : 0;
     const pinBob = pinActive ? 8 + 8 * Math.sin((snap.gameMs / PIN_CYCLE_MS) * Math.PI * 2) : 0;
+    const shopLot = lotCenter(CITY.shopLot.origin, CITY.shopLot.w, CITY.shopLot.h);
+    const shopHw = CITY.shopLot.w * TILE;
+    const shopHh = CITY.shopLot.h * TILE;
+    const nearShop = Math.hypot(snap.vehicle.x - shopLot.x, snap.vehicle.y - shopLot.y) <= HANDOFF_RADIUS;
+    const returningHome = driving && !stopId;
     if (stopId) {
       const house = CITY.houses.find((h) => h.id === stopId);
       if (house) {
@@ -227,6 +232,18 @@ export class DriveScene extends Phaser.Scene {
         this.pinPulse.setAlpha(flashPin ? 0.18 + 0.42 * pinPhase : 0.18 + 0.27 * pinPhase);
         this.pinPulse.setFillStyle(flashPin ? Color.lime : Color.amber, 1);
       }
+    } else if (returningHome) {
+      const glowKey = nearShop ? "shop:near" : "shop:away";
+      if (glowKey !== this.lastLotGlowKey) {
+        this.lastLotGlowKey = glowKey;
+        this.glow.clear();
+        this.glow.lineStyle(nearShop ? 4 : 2, Color.lime, nearShop ? 1 : 0.75);
+        this.glow.strokeRect(shopLot.x - shopHw / 2 - 8, shopLot.y - shopHh / 2 - 8, shopHw + 16, shopHh + 16);
+      }
+      this.pin.setVisible(false);
+      this.pinPulse.setVisible(false).setScale(1).setAlpha(0.35);
+      this.pin.clearTint();
+      this.pin.setAlpha(1);
     } else {
       if (this.lastLotGlowKey !== "") {
         this.lastLotGlowKey = "";
@@ -245,12 +262,10 @@ export class DriveScene extends Phaser.Scene {
       this.customer.setVisible(false);
     }
 
-    const shop = tileToWorld(CITY.shopSpawn);
-    const nearShop = Math.hypot(snap.vehicle.x - shop.x, snap.vehicle.y - shop.y) <= HANDOFF_RADIUS;
     const canTapShop = driving && nearShop;
-    const flashShop = next?.kind === "shop";
+    const flashShop = next?.kind === "shop" || canTapShop;
     if (this.shopImg.input) this.shopImg.input.enabled = driving;
-    this.shopImg.setTint(flashShop && canTapShop ? Color.flash : 0xffffff);
+    this.shopImg.setTint(flashShop ? Color.flash : 0xffffff);
   }
 
   private tutorialFlashHint(snap: SimSnapshot): TutorialHint | null {

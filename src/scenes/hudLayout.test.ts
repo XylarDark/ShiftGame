@@ -49,6 +49,14 @@ describe("HUD sign attachment guards", () => {
     expect(pop).not.toMatch(/targets: label/);
     expect(pop).toContain("SCORE_POP_SCALE_MS");
     expect(pop).toContain("SCORE_POP_RISE_MS");
+    expect(pop).toContain("scorePopPark");
+    expect(pop).not.toContain("scorePopLayer.setPosition");
+  });
+
+  it("parks score pop anchors without moving the shared layer under SCORE", () => {
+    const place = between(readouts, "placeReadouts(): void {", "\n  }", "placeReadouts");
+    expect(place).toContain("this.scorePopPark = { x: signLeft, y: y - 46 }");
+    expect(place).not.toContain("scorePopLayer.setPosition");
   });
 
   it("anchors shop readouts to the counter sign box when readoutsInShop", () => {

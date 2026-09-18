@@ -6,6 +6,7 @@ import { clampInput } from "../input/controls";
 import {
   GAME_HEIGHT,
   GAME_WIDTH,
+  HANDOFF_RADIUS,
   NPC_INTERACT_COOLDOWN_MS,
   SCORE_DELIVERY_LATE,
   SCORE_DELIVERY_ON_TIME,
@@ -21,7 +22,8 @@ import { tutorialHints, type TutorialHint } from "../sim/tutorialHints";
 import { skyAt, skyVisualDirtyKey } from "../sim/dayNight";
 import { addHudButton, addPanel } from "../ui/chrome";
 import { formatSlaClock, isSlaUrgent, RESULTS_NEW_DAY, RESULTS_TITLE } from "../ui/copy";
-import { houseTitle } from "../maps/cityT0";
+import { brand, headBackToShopHint } from "../ui/brand";
+import { CITY, houseTitle, lotCenter } from "../maps/cityT0";
 import type { UiInk } from "../ui/typeInk";
 import {
   addSignText,
@@ -100,6 +102,7 @@ export class HudScene extends Phaser.Scene {
   private drivePinLabel!: UiInk;
   private driveVanBanner!: UiInk;
   private driveShopCaption!: UiInk;
+  private driveShopCenter = { x: 0, y: 0 };
   private lastPinWho = "";
   private lastVanToast = "";
   private lastShopCaptionKey = "";
@@ -172,6 +175,7 @@ export class HudScene extends Phaser.Scene {
       .setOrigin(0.5, 1)
       .setDepth(20);
 
+    this.driveShopCenter = lotCenter(CITY.shopLot.origin, CITY.shopLot.w, CITY.shopLot.h);
     this.drivePinLabel = addSignText(this, 0, 0, "", {
       size: typeRolePx("hudBody"),
       typeRole: "hudBody",
@@ -569,7 +573,7 @@ export class HudScene extends Phaser.Scene {
     this.scene.setVisible(show, "shop");
   }
 
-  /** Active delivery line top-center; van/shop map captions stay off the drive map. */
+  /** Active delivery or return-to-shop pin top-center; van/shop map captions stay off the drive map. */
   private paintDriveCallouts(snap: SimSnapshot, driving: boolean, flashNext: TutorialHint | null): void {
     const stopId = driving ? snap.run?.nextStopId : null;
     const destOrder =
@@ -583,6 +587,24 @@ export class HudScene extends Phaser.Scene {
       }
       setSignAccent(this.drivePinLabel, isSlaUrgent(destOrder.slaRemainingMs) ? Color.danger : undefined);
       if (flashNext?.kind === "gpsPin") setSignAccent(this.drivePinLabel, Color.lime);
+      syncSignPlaque(this.drivePinLabel);
+      this.drivePinLabel.setVisible(true);
+      signContainer(this.drivePinLabel).setVisible(true);
+      const inset = designHudInset(readCssSafeArea(document.getElementById("game-root")));
+      const { width: viewW, height: viewH } = hudSceneViewport(this);
+      this.placeInstructionChip(this.drivePinLabel, inset, viewW, viewH);
+    } else if (driving) {
+      const nearShop =
+        Math.hypot(snap.vehicle.x - this.driveShopCenter.x, snap.vehicle.y - this.driveShopCenter.y) <=
+        HANDOFF_RADIUS;
+      const who = nearShop
+        ? `Tap ${brand.shopLabel}\nto return`
+        : headBackToShopHint();
+      if (who !== this.lastPinWho) {
+        this.lastPinWho = who;
+        setSignCopy(this.drivePinLabel, who);
+      }
+      setSignAccent(this.drivePinLabel, nearShop || flashNext?.kind === "shop" ? Color.lime : undefined);
       syncSignPlaque(this.drivePinLabel);
       this.drivePinLabel.setVisible(true);
       signContainer(this.drivePinLabel).setVisible(true);

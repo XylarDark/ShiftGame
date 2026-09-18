@@ -109,6 +109,8 @@ export class HudReadouts {
   private shopClockText?: UiInk;
   private scorePopPool: UiInk[] = [];
   private scorePopFree: UiInk[] = [];
+  /** Parked screen anchor for score pops that are not actor-projected. */
+  private scorePopPark = { x: 0, y: 0 };
 
   constructor(private readonly scene: Phaser.Scene) {}
 
@@ -224,7 +226,8 @@ export class HudReadouts {
       this.scoreText.setOrigin(1, 0.5).setPosition(signLeft, y);
       this.scoreCaption.setOrigin(1, 0.5).setPosition(signLeft - valueW - gap, y);
       this.clockText.setOrigin(0, 0.5).setPosition(signRight, y);
-      this.scorePopLayer.setPosition(signLeft, y - 46);
+      // Park only — never move scorePopLayer while a pop is tweening (that yanked +N onto SCORE).
+      this.scorePopPark = { x: signLeft, y: y - 46 };
     } else {
       const inset = designHudInset(readCssSafeArea(document.getElementById("game-root")));
       const { width: viewW } = hudSceneViewport(this.scene);
@@ -239,7 +242,7 @@ export class HudReadouts {
       this.scoreCaption.setOrigin(0, 0.5).setPosition(scoreLeft, rowY);
       this.scoreText.setOrigin(0, 0.5).setPosition(scoreLeft + captionW + HUD_SCORE_GAP, rowY);
       this.clockText.setOrigin(1, 0.5).setPosition(clockRight, rowY);
-      this.scorePopLayer.setPosition(scoreLeft + scoreRowW / 2, rowY - 46);
+      this.scorePopPark = { x: scoreLeft + scoreRowW / 2, y: rowY - 46 };
     }
     this.syncShopReadoutMirror();
   }
@@ -487,7 +490,7 @@ export class HudReadouts {
   releaseScorePop(label: UiInk): void {
     const host = signContainer(label);
     this.scene.tweens.killTweensOf(host);
-    host.setVisible(false).setAlpha(0).setY(0);
+    host.setVisible(false).setAlpha(0).setPosition(0, 0);
     label.setVisible(false).setAlpha(0).setText("");
     if (!this.scorePopFree.includes(label)) this.scorePopFree.push(label);
   }
@@ -578,18 +581,20 @@ export class HudReadouts {
 
   spawnScorePop(delta: number, screen?: { x: number; y: number }): void {
     const label = this.acquireScorePop(delta, !!screen);
-    if (screen) this.scorePopLayer.setPosition(screen.x, screen.y);
-    else this.placeReadouts();
+    if (!screen) this.placeReadouts();
+    const origin = screen ?? this.scorePopPark;
     this.scene.tweens.add({
       targets: this.scoreText,
       scale: { from: 1.18, to: 1 },
       duration: SCORE_POP_SCALE_MS,
       ease: "Back.easeOut",
     });
+    // Host sits in scorePopLayer at (0,0); absolute screen coords so placeReadouts cannot yank it.
     const popHost = signContainer(label);
+    popHost.setPosition(origin.x, origin.y);
     this.scene.tweens.add({
       targets: popHost,
-      y: { from: 0, to: -56 },
+      y: { from: origin.y, to: origin.y - 56 },
       alpha: { from: 1, to: 0 },
       duration: SCORE_POP_RISE_MS,
       ease: "Cubic.easeOut",

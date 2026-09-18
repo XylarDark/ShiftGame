@@ -91,9 +91,9 @@ const clockBox = clockBlock.includes("typeClockPx") ? FIXED_CLOCK : boxOf(clockB
 const popBox = popBlock.includes("typeRoleBox")
   ? { w: Math.round(160 * 1.25), h: Math.round(40 * 1.25) }
   : boxOf(popBlock, "score pop");
-const POP_LIFT = number(placeReadouts, /scorePopLayer\.setPosition\(signLeft, y - (\d+)\)/, "pop lift");
+const POP_LIFT = number(placeReadouts, /scorePopPark = \{ x: signLeft, y: y - (\d+) \}/, "pop lift");
 const popTween = between(readouts, "spawnScorePop(delta: number, screen?: { x: number; y: number }): void {", "\n  }", "spawnScorePop");
-const POP_RISE = number(popTween, /y: \{ from: 0, to: -(\d+) \}/, "pop rise");
+const POP_RISE = number(popTween, /origin\.y - (\d+)/, "pop rise");
 const ORDERS_INSET = number(shop, /const TABLET_LABEL_INSET = (\d+);/, "TABLET_LABEL_INSET");
 
 const tab = tabletLayout();

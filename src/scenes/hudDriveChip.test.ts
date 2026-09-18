@@ -61,10 +61,12 @@ describe("drive HUD callout sizing", () => {
     expect(hud).toContain('padVariant: "compact"');
   });
 
-  it("pins active delivery top-center; van/shop map captions stay hidden", () => {
+  it("pins active delivery or return-to-shop top-center; van/shop map captions stay hidden", () => {
     const hud = read("HudScene.ts");
     const callouts = hud.slice(hud.indexOf("private paintDriveCallouts"), hud.indexOf("private tutorialFlashHint"));
     expect(callouts).toContain("placeInstructionChip(this.drivePinLabel");
+    expect(callouts).toContain("headBackToShopHint");
+    expect(callouts).toContain("Tap ${brand.shopLabel}");
     expect(callouts).toContain("driveVanBanner.setVisible(false)");
     expect(callouts).toContain("driveShopCaption.setVisible(false)");
     expect(callouts).not.toContain("worldToScreen");

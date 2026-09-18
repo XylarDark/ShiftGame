@@ -24,6 +24,8 @@ describe("DriveScene grade throttle and dirty guards", () => {
   it("dirty-guards lot glow redraw", () => {
     expect(src).toContain("lastLotGlowKey");
     expect(src).toContain("stopId !== this.lastLotGlowKey");
+    expect(src).toContain("shop:near");
+    expect(src).toContain("returningHome");
   });
 
   it("skips paintDayNight when inactive", () => {
