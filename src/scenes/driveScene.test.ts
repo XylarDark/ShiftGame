@@ -77,6 +77,11 @@ describe("DriveScene grade throttle and dirty guards", () => {
     expect(src).toContain("enableItemHit(this.shopImg)");
     expect(src).toContain("this.vehicle");
     expect(src).toContain("trafficSprites");
+    const bake = src.slice(src.indexOf("private async bakeStaticCityMap"), src.indexOf("private yieldToRenderer"));
+    expect(bake).toMatch(/renderTexture\(x, y, w, h\)/);
+    expect(bake).toContain("cam.setZoom(1)");
+    expect(bake).not.toContain("bakeCellDimension");
+    expect(bake).not.toContain("configureSceneBakeRT");
   });
 });
 

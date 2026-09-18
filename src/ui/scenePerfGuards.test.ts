@@ -241,7 +241,7 @@ describe("scene perf guards", () => {
     expect(update).not.toMatch(/trafficCars\(/);
   });
 
-  it("Drive city bakes stay tier-scaled; shop/door static bakes stamp at zoom 1", () => {
+  it("Drive/shop/door static bakes stamp at design size and camera zoom 1", () => {
     const shop = read("src/scenes/ShopScene.ts");
     const drive = read("src/scenes/DriveScene.ts");
     const door = read("src/scenes/DoorScene.ts");
@@ -251,9 +251,11 @@ describe("scene perf guards", () => {
     expect(bakeShop).not.toContain("configureSceneBakeRT");
     expect(bakeShop).toContain("cam.setZoom(1)");
     const bakeCity = drive.slice(drive.indexOf("private async bakeStaticCityMap"), drive.indexOf("private yieldToRenderer"));
-    expect(bakeCity).toContain("bakeCellDimension");
-    expect(bakeCity).toContain("configureSceneBakeRT");
-    expect(bakeCity).not.toMatch(/renderTexture\(x, y, w, h\)/);
+    expect(bakeCity).toMatch(/renderTexture\(x, y, w, h\)/);
+    expect(bakeCity).toContain("cam.setZoom(1)");
+    expect(bakeCity).toContain("rt.camera.setZoom(1)");
+    expect(bakeCity).not.toContain("bakeCellDimension");
+    expect(bakeCity).not.toContain("configureSceneBakeRT");
     const bakeDoor = door.slice(door.indexOf("private bakeDoorFacade"), door.indexOf("private paintDoorDayNight"));
     expect(bakeDoor).toMatch(/renderTexture\(0, 0, GAME_WIDTH, GAME_HEIGHT\)/);
     expect(bakeDoor).toContain("cam.setZoom(1)");

@@ -441,6 +441,14 @@ the thing it described.
 - **Fix:** defer `registerTypeAtlas` to `TitleScene.create` (after boot warm); gate mid-tier `scale.resize` + world camera zoom at 1 until Title via `bootRenderGate.ts`; stamp shop static bakes at camera zoom 1 (Door #119 pattern); `forceBootExit` wall-clock watchdog so a Door-stall never orphans the loading gate; wide phone landscape uses `width-fill` (844×390 → zero side rails, vertical crop) on **phone-like viewports** (`coarse` **or** `min(w,h) ≤ 480`, same heuristic as portrait rotate-gate); narrow portrait gates even when Chrome omits `(pointer: coarse)`.
 - **Prevention:** `bootResidency.test.ts` + `typeAtlas.test.ts` source-scan boot vs title registration; `renderBudget.test.ts` boot render gate; `shell.test.ts` + `viewFit.test.ts` width-fill on 844×390 without coarse; device-toolbar capture (mobile metrics, no touch emulation).
 
+### Drive city bake misaligned with van/grid (Door #119 class)
+
+- **Date:** 2026-09-18
+- **Symptom:** delivery map roads/lots looked shifted off the grid relative to the van, pin, and traffic — same class of misalignment as the doorstep house facade.
+- **Cause:** `bakeStaticCityMap` allocated cells with `bakeCellDimension` + `configureSceneBakeRT` (RT camera zoom = mid `renderScale`). `batchDraw` also inherited the live scene camera zoom, so static ground drifted vs live sprites in world coords.
+- **Fix:** stamp each ≤2048px cell at full design size with scene + RT camera zoom 1 and scroll `(x,y)`; keep cell tiling for max-texture-size. Matches Door/Shop zoom-1 bake.
+- **Prevention:** `scenePerfGuards.test.ts` + `driveScene.test.ts` assert design-size Drive bake and forbid `bakeCellDimension` / `configureSceneBakeRT` on that path.
+
 ---
 
 ## Size / speed / readability plan — closed (2026-09-15)

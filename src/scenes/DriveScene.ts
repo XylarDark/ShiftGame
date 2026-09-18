@@ -3,7 +3,7 @@ import { cityTileImageKey } from "../art/cityTileAtlas";
 import { applyPersonTexture, personImageKey } from "../art/peopleAtlas";
 import { driveGrade } from "../art/dayNightGrade";
 import { applyDayNight, attachDayNight, dayNightFrom, shouldApplyGrade, type DayNightPipeline } from "../art/dayNightPipeline";
-import { bakeCellDimension, configureSceneBakeRT, getRenderBudget, syncSceneRenderCamera } from "../ui/renderBudget";
+import { getRenderBudget, syncSceneRenderCamera } from "../ui/renderBudget";
 import { wireSceneDayNightLifecycle } from "../ui/sceneDayNightLifecycle";
 import { PIN_CYCLE_MS } from "./driveConstants";
 
@@ -487,6 +487,10 @@ export class DriveScene extends Phaser.Scene {
    * Bake ground/roads/static props into a grid of RenderTextures, then destroy the
    * per-tile Images. Live sprites after this: vehicle, walker, traffic, pins,
    * interactive shop, texts, and night/lot glow Graphics.
+   *
+   * Full design-resolution cells at camera zoom 1 — tier-scaled RT + configureSceneBakeRT
+   * misaligned roads/lots vs the van (same root cause as Door #119 / shop interior).
+   * Keep ≤2048px tiling for GPU max-texture-size; do not shrink by renderScale.
    */
   private async bakeStaticCityMap(): Promise<void> {
     const layers = [...this.staticBakeList].sort((a, b) => {
@@ -494,15 +498,20 @@ export class DriveScene extends Phaser.Scene {
       const db = "depth" in b ? Number((b as { depth: number }).depth) : 0;
       return da - db;
     });
+    const cam = this.cameras.main;
+    const savedZoom = cam.zoom;
+    const savedScrollX = cam.scrollX;
+    const savedScrollY = cam.scrollY;
+    cam.setZoom(1);
+    cam.setScroll(0, 0);
+
     for (let y = 0; y < MAP_PX_H; y += CITY_BAKE_CELL) {
       for (let x = 0; x < MAP_PX_W; x += CITY_BAKE_CELL) {
         const w = Math.min(CITY_BAKE_CELL, MAP_PX_W - x);
         const h = Math.min(CITY_BAKE_CELL, MAP_PX_H - y);
-        const rt = this.add
-          .renderTexture(x, y, bakeCellDimension(w), bakeCellDimension(h))
-          .setOrigin(0, 0)
-          .setDepth(0);
-        configureSceneBakeRT(rt, w, h, { scrollX: x, scrollY: y });
+        const rt = this.add.renderTexture(x, y, w, h).setOrigin(0, 0).setDepth(0);
+        rt.camera.setZoom(1);
+        rt.camera.setScroll(x, y);
         rt.beginDraw();
         for (const obj of layers) {
           if (!staticIntersectsBakeCell(obj, x, y, w, h)) continue;
@@ -513,6 +522,9 @@ export class DriveScene extends Phaser.Scene {
         await this.yieldToRenderer();
       }
     }
+
+    cam.setZoom(savedZoom);
+    cam.setScroll(savedScrollX, savedScrollY);
     for (const obj of this.staticBakeList) obj.destroy();
     this.staticBakeList = [];
   }
