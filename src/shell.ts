@@ -3,7 +3,6 @@ import { GAME_HEIGHT, GAME_WIDTH } from "./sim/constants";
 import {
   containStage,
   GAME_ASPECT,
-  pickPhoneStageFitMode,
   notifyViewfit,
   phaserDisplayScale,
   RAIL_MIN_CSS_PX,
@@ -19,7 +18,7 @@ export const PHONE_SHORT_EDGE_MAX_PX = 480;
 /**
  * Phone-like viewport: coarse pointer, or a short edge typical of handsets.
  * Chrome device toolbar often omits `(pointer: coarse)` — use the same heuristic
- * as the portrait rotate-gate for stage fit (width-fill on wide landscape).
+ * as the portrait rotate-gate (narrow short edge).
  */
 export function isPhoneLikeViewport(
   width: number,
@@ -106,8 +105,8 @@ function layoutRails(
 
 /**
  * Layout the 16:9 playfield.
- * Phone-like viewports: width-fill on wide landscape (no side rails), height-fill
- * on taller tablets (side crop, no top bar). Desktop / IDE panes: classic contain.
+ * Always **contain** so the full design stays visible (no height/width-fill crop that
+ * reads as zoomed-in). Leftover width becomes Kindling/Shift side rails when wide enough.
  */
 export function installMobileShell(game: Phaser.Game): void {
   const shell = document.getElementById("kindling-shell");
@@ -134,12 +133,7 @@ export function installMobileShell(game: Phaser.Game): void {
     const theme = document.querySelector('meta[name="theme-color"]');
     if (theme) theme.setAttribute("content", Color.skyTopHex);
 
-    const phoneLike = isPhoneLikeViewport(width, height, coarse());
-    const packed = containStage(
-      { width, height },
-      GAME_ASPECT,
-      phoneLike ? pickPhoneStageFitMode({ width, height }) : "contain",
-    );
+    const packed = containStage({ width, height }, GAME_ASPECT, "contain");
     // Publish contain scale before viewfit so type floors / mobile ramp see it.
     setStageContainScale(stageContainScale(packed.stage));
     setStageFrame(packed.stage);

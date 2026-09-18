@@ -6,7 +6,7 @@ import {
   isStandaloneDisplay,
   tryLockLandscape,
 } from "./shell";
-import { containStage, pickPhoneStageFitMode } from "./ui/viewFit";
+import { containStage } from "./ui/viewFit";
 import { GAME_HEIGHT, GAME_WIDTH } from "./sim/constants";
 
 describe("isPhoneLikeViewport", () => {
@@ -22,13 +22,14 @@ describe("isPhoneLikeViewport", () => {
     expect(isPhoneLikeViewport(1268, 971, false)).toBe(false);
   });
 
-  it("width-fills wide phone landscape with zero side rails when coarse is absent", () => {
-    const mode = pickPhoneStageFitMode({ width: 844, height: 390 });
-    expect(mode).toBe("width-fill");
-    const packed = containStage({ width: 844, height: 390 }, undefined, mode);
-    expect(packed.railLeft).toBe(0);
-    expect(packed.railRight).toBe(0);
-    expect(packed.stage.width).toBe(844);
+  it("contains wide phone landscape with side rails (no vertical crop zoom)", () => {
+    // Shell always uses contain; 844×390 is wider than 16:9 so leftover becomes rails.
+    const packed = containStage({ width: 844, height: 390 }, undefined, "contain");
+    expect(packed.stage.height).toBe(390);
+    expect(packed.stage.width).toBeLessThan(844);
+    expect(packed.railLeft).toBeGreaterThan(0);
+    expect(packed.railRight).toBeGreaterThan(0);
+    expect(packed.stage.top).toBe(0);
   });
 });
 
@@ -93,12 +94,13 @@ describe("applyCanvasDisplayScale", () => {
         this.y = y;
       },
     };
-    // Width-fill 844×390 viewport → 844×475 stage (16:9); full design buffer.
-    const stageH = Math.round((844 * GAME_HEIGHT) / GAME_WIDTH);
+    // Contain 844×390 → height-limited 16:9 stage (~693×390); full design buffer.
+    const stageH = 390;
+    const stageW = Math.round((stageH * GAME_WIDTH) / GAME_HEIGHT);
     const game = {
-      canvas: { clientWidth: 844, clientHeight: stageH },
+      canvas: { clientWidth: stageW, clientHeight: stageH },
       scale: {
-        canvasBounds: { width: 844, height: stageH },
+        canvasBounds: { width: stageW, height: stageH },
         gameSize: { width: GAME_WIDTH, height: GAME_HEIGHT },
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
@@ -107,7 +109,7 @@ describe("applyCanvasDisplayScale", () => {
       },
     };
     applyCanvasDisplayScale(game as never);
-    expect(displayScale.x).toBeCloseTo(GAME_WIDTH / 844);
+    expect(displayScale.x).toBeCloseTo(GAME_WIDTH / stageW);
     expect(displayScale.y).toBeCloseTo(GAME_HEIGHT / stageH);
     expect(displayScale.x).toBeCloseTo(displayScale.y, 1);
   });
