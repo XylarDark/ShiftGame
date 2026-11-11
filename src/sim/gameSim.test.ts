@@ -668,7 +668,7 @@ describe("GameSim order loops", () => {
     sim.setVehiclePosition(house.x, house.y);
     expect(sim.backToShop()).toBe(false);
     expect(sim.snapshot().playerRole).toBe("driver");
-    expect(sim.snapshot().toast).toBe("Drive up to Kindling first.");
+    expect(sim.snapshot().toast).toBe("Drive up to the shop first.");
     const shop = tileToWorld(CITY.shopSpawn);
     sim.setVehiclePosition(shop.x, shop.y);
     expect(sim.backToShop()).toBe(true);

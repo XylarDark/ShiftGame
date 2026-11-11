@@ -1,7 +1,7 @@
 {
-  "name": "Kindling Cannabis",
-  "short_name": "Kindling",
-  "description": "One Kindling shift: run the shop, then deliver with ID checks. 9 AM–11 PM.",
+  "name": "Shift",
+  "short_name": "Shift",
+  "description": "One shop shift, then deliveries with ID checks. 9 AM–11 PM.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

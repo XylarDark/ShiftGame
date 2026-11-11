@@ -13,11 +13,11 @@ export const HOWTO_HINT = "Tap, click, or press any key";
 export const HOWTO_STEPS = [
   {
     title: "Counter sale",
-    body: "Walk-in names a strain. Tap that TV, wait for the fetch, then tap the customer. No bag.",
+    body: "Walk-in names an item. Tap that TV, wait for the fetch, then tap the customer. No bag.",
   },
   {
     title: "Pickup ticket",
-    body: "Tap the flashing tablet, that strain, then a bag. When they arrive, tap them at the counter.",
+    body: "Tap the flashing tablet, that item, then a bag. When they arrive, tap them at the counter.",
   },
   {
     title: "Delivery run",

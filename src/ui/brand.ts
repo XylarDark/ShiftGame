@@ -1,6 +1,6 @@
-/** Player-visible identity — Kindling by default; Shift when VITE_PORTFOLIO=1 at build time. */
+/** Player-visible identity — the game ships as Shift in every build (main site and portfolio embed). */
 
-/** True for `vite build --mode embed` (CI) or when VITE_PORTFOLIO=1 is set locally. */
+/** True for `vite build --mode embed` (CI) or when VITE_PORTFOLIO=1 is set locally. Copy no longer differs by build. */
 export const IS_PORTFOLIO =
   import.meta.env.VITE_PORTFOLIO === "1" || import.meta.env.MODE === "embed";
 
@@ -22,24 +22,6 @@ export interface BrandStrings {
   shopLabel: string;
 }
 
-const kindling: BrandStrings = {
-  mark: "KINDLING",
-  title: "Kindling",
-  productTitle: "Kindling Cannabis",
-  tagline: "One Kindling shift: run the shop, then deliver with ID checks. 9 AM–11 PM.",
-  welcomeTitle: "Welcome to Kindling Cannabis",
-  loadingBoot: "Loading Kindling…",
-  rotateGate: "Turn your phone sideways to run Kindling.",
-  deliveryHeader: "KINDLING DELIVERY",
-  idProvince: "PROVINCE OF KINDLING",
-  backToShopCaption: "Return to Kindling",
-  howtoDeliveryReturn: "Kindling",
-  shiftVerdictClean: "Clean shift — Kindling stays open.",
-  shiftTitleEnd: "End of shift — Kindling",
-  welcomeToast: "Welcome to Kindling. Watch the order screen.",
-  shopLabel: "Kindling",
-};
-
 const shift: BrandStrings = {
   mark: "SHIFT",
   title: "Shift",
@@ -58,7 +40,7 @@ const shift: BrandStrings = {
   shopLabel: "the shop",
 };
 
-export const brand: BrandStrings = IS_PORTFOLIO ? shift : kindling;
+export const brand: BrandStrings = shift;
 
 /** In-game toasts and nav hints that name the shop hub. */
 export function shopHubLabel(): string {
