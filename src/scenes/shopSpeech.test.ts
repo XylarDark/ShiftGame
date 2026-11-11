@@ -86,7 +86,7 @@ describe("speech stays off the models it belongs to", () => {
     expect(sync, "re-pins key-lead when plaque height changes").toContain("lastKeyLeadPanelH");
     expect(sync, "re-pins driver when plaque height changes").toContain("lastDriverPanelH");
     expect(src, "target callout uses plaque center").toMatch(
-      /setSignPlaqueCenter\(this\.targetCallout, p\.x, p\.y - strainSlotH\(\) \/ 2 - 6\)/,
+      /setSignPlaqueCenter\(this\.targetCallout, p\.x, p\.y - itemSlotH\(\) \/ 2 - 6\)/,
     );
   });
 
@@ -245,10 +245,10 @@ describe("overhead speech collision layout", () => {
 });
 
 describe("menu board row labels", () => {
-  it("places strain copy on the optical-centre anchor", () => {
+  it("places item copy on the optical-centre anchor", () => {
     const hotspots = between(src, "private makeHotspots(", "\n}\n", "makeHotspots");
-    expect(hotspots).toContain("strainLabelPos(i)");
-    expect(hotspots).toContain("strainPos(i)");
+    expect(hotspots).toContain("itemLabelPos(i)");
+    expect(hotspots).toContain("itemPos(i)");
   });
 });
 

@@ -22,7 +22,7 @@ export interface ShiftResults {
   clockLabel: string;
   gameMs: number;
   breakdown: ShiftBreakdown;
-  under19Fails: number;
+  idMismatchFails: number;
   title: string;
   verdict: string;
 }
@@ -49,11 +49,11 @@ export function countShiftBreakdown(orders: readonly Order[]): ShiftBreakdown {
   return { inStore, pickups, deliveriesOnTime, deliveriesLate, fails };
 }
 
-export function shiftVerdict(breakdown: ShiftBreakdown, under19Fails: number): string {
-  if (under19Fails > 0) {
-    return under19Fails === 1
-      ? "Licence risk — one under-19 handoff was stopped."
-      : `Licence risk — ${under19Fails} under-19 handoffs were stopped.`;
+export function shiftVerdict(breakdown: ShiftBreakdown, idMismatchFails: number): string {
+  if (idMismatchFails > 0) {
+    return idMismatchFails === 1
+      ? "ID review — one handoff was refused because the name didn't match."
+      : `ID review — ${idMismatchFails} handoffs were refused because the names didn't match.`;
   }
   if (breakdown.fails >= 3 || breakdown.deliveriesLate >= 3) {
     return "Sloppy shift — too many fails or late drops.";
@@ -67,8 +67,8 @@ export function shiftVerdict(breakdown: ShiftBreakdown, under19Fails: number): s
   return brand.shiftVerdictClean;
 }
 
-export function shiftResultsTitle(breakdown: ShiftBreakdown, under19Fails: number): string {
-  if (under19Fails > 0) return "Shift closed — compliance hold";
+export function shiftResultsTitle(breakdown: ShiftBreakdown, idMismatchFails: number): string {
+  if (idMismatchFails > 0) return "Shift closed — ID review";
   if (breakdown.fails >= 3) return "Shift closed — rough night";
   return brand.shiftTitleEnd;
 }
@@ -77,7 +77,7 @@ export function buildShiftResults(
   orders: readonly Order[],
   score: number,
   gameMs: number,
-  under19Fails: number,
+  idMismatchFails: number,
 ): ShiftResults {
   const breakdown = countShiftBreakdown(orders);
   return {
@@ -85,9 +85,9 @@ export function buildShiftResults(
     clockLabel: formatGameClock(gameMs),
     gameMs,
     breakdown,
-    under19Fails,
-    title: shiftResultsTitle(breakdown, under19Fails),
-    verdict: shiftVerdict(breakdown, under19Fails),
+    idMismatchFails,
+    title: shiftResultsTitle(breakdown, idMismatchFails),
+    verdict: shiftVerdict(breakdown, idMismatchFails),
   };
 }
 

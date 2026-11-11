@@ -122,7 +122,7 @@ export function applyCaptureSeed(sim: GameSim): void {
   if (seed === "shop-holding") {
     const order = sim.spawnOrder("inStore");
     waitCustomerSettled(sim, order.id);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitFetch(sim);
     return;
   }
@@ -136,8 +136,17 @@ export function applyCaptureSeed(sim: GameSim): void {
 
   const order = sim.spawnOrder("inStore");
   waitCustomerSettled(sim, order.id);
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   for (let i = 0; i < 24; i++) sim.tick(50);
+}
+
+/** `?idmatch=0` seeds the promo delivery with an ID that doesn't match the order. */
+export function idMatchQuery(): boolean {
+  try {
+    return new URLSearchParams(globalThis.location?.search ?? "").get("idmatch") !== "0";
+  } catch {
+    return true;
+  }
 }
 
 /** Seed a delivery mid-run (map) or at the ID-check porch (door). */
@@ -146,9 +155,9 @@ export function applyPromoShot(sim: GameSim): void {
   if (!shot) return;
 
   const houseId = houseQuery();
-  const order = sim.spawnOrder("delivery", { destinationId: houseId, ageOk: true });
+  const order = sim.spawnOrder("delivery", { destinationId: houseId, idMatches: idMatchQuery() });
   sim.shopClick({ type: "tablet", orderId: order.id });
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   waitFetch(sim);
   sim.shopClick({ type: "bagRack" });
   sim.hitTheRoad();

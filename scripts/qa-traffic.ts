@@ -36,9 +36,9 @@ function waitFetch(sim: GameSim): void {
 }
 
 function fillDelivery(sim: GameSim, houseId = "house-1") {
-  const order = sim.spawnOrder("delivery", { destinationId: houseId, ageOk: true });
+  const order = sim.spawnOrder("delivery", { destinationId: houseId, idMatches: true });
   sim.shopClick({ type: "tablet", orderId: order.id });
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   waitFetch(sim);
   sim.shopClick({ type: "bagRack" });
   return order;

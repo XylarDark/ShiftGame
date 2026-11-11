@@ -12,6 +12,7 @@ describe("orders helpers", () => {
       createdAtGameMs: 0,
       customerName: "Ren Voss",
       idAge: 24,
+      idMatches: true,
     };
     const ringing: Order = { ...queued, id: "b", type: "inStore", status: "atRegister" };
     expect(needsFetch(queued)).toBe(true);
@@ -31,6 +32,7 @@ describe("orders helpers", () => {
       createdAtGameMs: 0,
       customerName: "Ren Voss",
       idAge: 24,
+      idMatches: true,
     };
     expect(destLabel(base)).toBe("Counter");
     expect(destLabel({ ...base, type: "pickup" })).toBe("Pickup");

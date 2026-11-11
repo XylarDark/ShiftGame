@@ -94,18 +94,18 @@ function runCover(sim: GameSim, done: () => boolean, maxTicks = 600): void {
 function fillTicket(
   sim: GameSim,
   type: "pickup" | "inStore" | "delivery",
-  extra?: { destinationId?: string; skuId?: string; ageOk?: boolean },
+  extra?: { destinationId?: string; skuId?: string; idMatches?: boolean },
 ) {
-  const order = sim.spawnOrder(type, { ...extra, ageOk: extra?.ageOk ?? true });
+  const order = sim.spawnOrder(type, { ...extra, idMatches: extra?.idMatches ?? true });
   if (type === "inStore") {
     waitForCustomerAtCounter(sim, order.id);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     sim.shopClick({ type: "customer", orderId: order.id });
     return order;
   }
   sim.shopClick({ type: "tablet", orderId: order.id });
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   waitForFetch(sim);
   sim.shopClick({ type: "bagRack" });
   return order;
@@ -142,7 +142,7 @@ describe("GameSim order loops", () => {
     expect(e).not.toBe(a);
   });
 
-  it("completes pickup: bag, strain, counter, arrive, handoff", () => {
+  it("completes pickup: bag, item, counter, arrive, handoff", () => {
     const sim = GameSim.create({ seed: 1, autoSpawn: false });
     const order = fillTicket(sim, "pickup");
     expect(order.status).toBe("onPickupShelf");
@@ -226,19 +226,19 @@ describe("GameSim order loops", () => {
     expect(walked.score).toBe(SCORE_FAIL);
   });
 
-  it("does not finish a walk-in until the strain is handed to them", () => {
+  it("does not finish a walk-in until the item is handed to them", () => {
     const sim = GameSim.create({ seed: 2, autoSpawn: false });
     const order = sim.spawnOrder("inStore");
     const other = sim.catalog.find((s) => s.id !== order.skuId)!;
-    sim.shopClick({ type: "strain", skuId: other.id });
+    sim.shopClick({ type: "item", skuId: other.id });
     expect(sim.orderById(order.id)?.status).toBe("atRegister");
     expect(sim.score).toBe(0);
     waitForCustomerAtCounter(sim, order.id);
-    sim.shopClick({ type: "strain", skuId: other.id });
+    sim.shopClick({ type: "item", skuId: other.id });
     sim.shopClick({ type: "customer", orderId: order.id });
     expect(sim.orderById(order.id)?.status).toBe("atRegister");
     expect(sim.score).toBe(0);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     expect(sim.snapshot().serveLine).toContain("HANDOFF");
     expect(sim.orderById(order.id)?.status).toBe("atRegister");
@@ -250,11 +250,11 @@ describe("GameSim order loops", () => {
   it("blocks walk-in TV taps until the customer reaches the counter", () => {
     const sim = GameSim.create({ seed: 2, autoSpawn: false });
     const order = sim.spawnOrder("inStore");
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     expect(sim.snapshot().handSkuId).toBeNull();
     expect(sim.snapshot().customers.find((c) => c.orderId === order.id)?.feedback).toContain("walking in");
     waitForCustomerAtCounter(sim, order.id);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     expect(sim.snapshot().handSkuId).toBe(order.skuId);
   });
@@ -299,13 +299,13 @@ describe("GameSim order loops", () => {
     expect(view.late).toBe(true);
   });
 
-  it("packs after tablet, strain, then bag — no receipt click", () => {
+  it("packs after tablet, item, then bag — no receipt click", () => {
     const sim = GameSim.create({ seed: 8, autoSpawn: false });
     const order = sim.spawnOrder("pickup");
     sim.shopClick({ type: "tablet", orderId: order.id });
     expect(sim.snapshot().highlightSkuId).toBe(order.skuId);
     expect(sim.snapshot().awaitingBag).toBe(false);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     expect(sim.snapshot().awaitingBag).toBe(true);
     expect(sim.snapshot().highlightSkuId).toBeNull();
@@ -319,13 +319,13 @@ describe("GameSim order loops", () => {
     const order = sim.spawnOrder("pickup");
     const other = sim.catalog.find((s) => s.id !== order.skuId)!;
     sim.shopClick({ type: "tablet", orderId: order.id });
-    sim.shopClick({ type: "strain", skuId: other.id });
+    sim.shopClick({ type: "item", skuId: other.id });
     expect(sim.snapshot().handSkuId).toBeNull();
     expect(sim.snapshot().keyLead.phase).toBe("idle");
     expect(sim.snapshot().targetCallout?.text).toMatch(/Wrong TV/);
     expect(sim.snapshot().ordersNotice).toMatch(/Wrong TV/);
     expect(sim.snapshot().sfxCue?.kind).toBe("wrong");
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     expect(sim.snapshot().handSkuId).toBe(order.skuId);
     sim.shopClick({ type: "bagRack" });
@@ -340,12 +340,12 @@ describe("GameSim order loops", () => {
     waitForCustomerAtCounter(sim, walkIn.id);
     sim.shopClick({ type: "tablet", orderId: ticket.id });
     const other = sim.catalog.find((s) => s.id !== walkIn.skuId)!;
-    sim.shopClick({ type: "strain", skuId: other.id });
+    sim.shopClick({ type: "item", skuId: other.id });
     expect(sim.snapshot().handSkuId).toBeNull();
     expect(sim.snapshot().targetCallout?.skuId).toBe(other.id);
     expect(sim.snapshot().customers.find((c) => c.orderId === walkIn.id)?.feedback).toMatch(/Wrong TV/);
     expect(sim.snapshot().toast).toBe("");
-    sim.shopClick({ type: "strain", skuId: walkIn.skuId });
+    sim.shopClick({ type: "item", skuId: walkIn.skuId });
     waitForFetch(sim);
     expect(sim.snapshot().handSkuId).toBe(walkIn.skuId);
   });
@@ -360,7 +360,7 @@ describe("GameSim order loops", () => {
     const sim = GameSim.create({ seed: 2, autoSpawn: false });
     const order = sim.spawnOrder("inStore");
     waitForCustomerAtCounter(sim, order.id);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     const sku = sim.catalog.find((s) => s.id === order.skuId)!;
     const snap = sim.snapshot();
@@ -368,7 +368,7 @@ describe("GameSim order loops", () => {
     const customer = snap.customers.find((c) => c.orderId === order.id);
     expect(customer?.bubble).toBe("Tap me");
     expect(customer?.feedback ?? "").toBe("");
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     expect(sim.snapshot().customers.find((c) => c.orderId === order.id)?.feedback ?? "").toBe("");
   });
 
@@ -376,11 +376,11 @@ describe("GameSim order loops", () => {
     const sim = GameSim.create({ seed: 1, autoSpawn: false });
     const order = sim.spawnOrder("pickup");
     sim.shopClick({ type: "tablet", orderId: order.id });
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     const sku = sim.catalog.find((s) => s.id === order.skuId)!;
     expect(sim.snapshot().keyLeadLine).toBe(`Holding ${sku.name}. Tap a bag`);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     expect(sim.snapshot().keyLeadLine).toBe(`Holding ${sku.name}. Tap a bag`);
     expect(sim.snapshot().ordersNotice).not.toMatch(/Already holding/);
   });
@@ -432,16 +432,16 @@ describe("GameSim order loops", () => {
     expect(sim.orderById(order.id)?.status).toBe("onRun");
   });
 
-  it("completes a 19+ stop: ask ID, check ID, hand bag, photo, then returns to the map", () => {
+  it("completes a matching-ID stop: ask ID, check ID, hand bag, photo, then returns to the map", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+    const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     expect(sim.snapshot().dropoff.actionLabel).toBe("ASK ID");
     expect(sim.snapshot().dropoff.idCard).toBeNull();
     stepDropoff(sim);
     expect(sim.snapshot().dropoff.actionLabel).toBe("CHECK ID");
-    expect(sim.snapshot().dropoff.idCard?.ageOk).toBe(true);
+    expect(sim.snapshot().dropoff.idCard?.matches).toBe(true);
     stepDropoff(sim);
     expect(sim.snapshot().dropoff.actionLabel).toBe("HAND BAG");
     expect(sim.snapshot().dropoff.idCard).toBeNull();
@@ -455,8 +455,8 @@ describe("GameSim order loops", () => {
 
   it("does not advance past ASK ID on the same tap burst", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: false });
-    fillTicket(sim, "delivery", { destinationId: "house-2", ageOk: true });
+    fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: false });
+    fillTicket(sim, "delivery", { destinationId: "house-2", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     sim.interact(); // ask
@@ -469,8 +469,8 @@ describe("GameSim order loops", () => {
 
   it("keeps hand-bag and photo working on the first stop of a multi-stop run", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    const first = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
-    fillTicket(sim, "delivery", { destinationId: "house-2", ageOk: true });
+    const first = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
+    fillTicket(sim, "delivery", { destinationId: "house-2", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim); // ask
@@ -488,7 +488,7 @@ describe("GameSim order loops", () => {
 
   it("does not auto-skip bag/photo when ID click-through arrives during the lock", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+    fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim); // ask
@@ -507,7 +507,7 @@ describe("GameSim order loops", () => {
 
   it("requires a fresh press after CHECK ID — held/repeat queues cannot skip bag/photo", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+    const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim); // ask
@@ -530,7 +530,7 @@ describe("GameSim order loops", () => {
 
   it("edge-triggered press/release blocks held touch through CHECK ID into bag/photo", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+    const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim); // ask
@@ -561,7 +561,7 @@ describe("GameSim order loops", () => {
 
   it("clears dropoffConfirmHeld when CHECK ID closes without pointerup", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+    fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim); // ask
@@ -577,8 +577,8 @@ describe("GameSim order loops", () => {
 
   it("second stop accepts bag tap after the ID card closes", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
-    fillTicket(sim, "delivery", { destinationId: "house-2", ageOk: true });
+    fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
+    fillTicket(sim, "delivery", { destinationId: "house-2", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim); // ask
@@ -600,7 +600,7 @@ describe("GameSim order loops", () => {
 
   it("rapid double-confirm during lock advances at most one step after release", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+    fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim);
@@ -626,15 +626,15 @@ describe("GameSim order loops", () => {
     expect(sim.snapshot().dropoff.actionLabel).toBe("PHOTO");
   });
 
-  it("denies an underage stop, fails the order, and returns to the map", () => {
+  it("denies a mismatched-ID stop, fails the order, and returns to the map", () => {
     const sim = GameSim.create({ seed: 4, autoSpawn: false });
-    const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: false });
+    const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: false });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     expect(sim.snapshot().dropoff.actionLabel).toBe("ASK ID");
     expect(sim.snapshot().dropoff.idCard).toBeNull();
     stepDropoff(sim);
-    expect(sim.snapshot().dropoff.idCard?.ageOk).toBe(false);
+    expect(sim.snapshot().dropoff.idCard?.matches).toBe(false);
     stepDropoff(sim);
     expect(sim.orderById(order.id)?.status).toBe("failed");
     expect(sim.score).toBe(SCORE_FAIL);
@@ -642,10 +642,10 @@ describe("GameSim order loops", () => {
     expect(sim.snapshot().run).toBeNull();
   });
 
-  it("after an underage deny, GPS still points at the next bag on the run", () => {
+  it("after a mismatched-ID deny, GPS still points at the next bag on the run", () => {
     const sim = GameSim.create({ seed: 5, autoSpawn: false });
-    const first = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: false });
-    const second = fillTicket(sim, "delivery", { destinationId: "house-2", ageOk: true });
+    const first = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: false });
+    const second = fillTicket(sim, "delivery", { destinationId: "house-2", idMatches: true });
     sim.hitTheRoad();
     startDoor(sim, "house-1");
     stepDropoff(sim);
@@ -1031,7 +1031,7 @@ describe("GameSim order loops", () => {
     expect(TICKET_WAVE_GAP_SCALE).toBeCloseTo(4 / 3, 6);
   });
 
-  it("calls out strain and customer after the tablet is tapped", () => {
+  it("calls out item and customer after the tablet is tapped", () => {
     const sim = GameSim.create({ seed: 1, autoSpawn: false });
     const order = sim.spawnOrder("pickup");
     const sku = sim.catalog.find((s) => s.id === order.skuId)!;
@@ -1060,7 +1060,7 @@ describe("GameSim order loops", () => {
     expect(sim.snapshot().highlightSkuId).toBe(order.skuId);
     expect(sim.snapshot().awaitingBag).toBe(false);
     expect(sim.snapshot().selectedOrderId).toBe(order.id);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     expect(sim.snapshot().highlightSkuId).toBeNull();
     expect(sim.snapshot().awaitingBag).toBe(true);
@@ -1104,7 +1104,7 @@ describe("GameSim order loops", () => {
     const second = sim.spawnOrder("delivery", { destinationId: "house-1" });
     sim.shopClick({ type: "tablet", orderId: first.id });
     sim.shopClick({ type: "tablet", orderId: second.id });
-    sim.shopClick({ type: "strain", skuId: first.skuId });
+    sim.shopClick({ type: "item", skuId: first.skuId });
     waitForFetch(sim);
     sim.shopClick({ type: "bagRack" });
     expect(first.status).toBe("onPickupShelf");
@@ -1112,7 +1112,7 @@ describe("GameSim order loops", () => {
     expect(sim.snapshot().highlightSkuId).toBe(second.skuId);
     expect(sim.snapshot().awaitingBag).toBe(false);
     expect(sim.snapshot().bagsOnPickup).toContain(first.id);
-    sim.shopClick({ type: "strain", skuId: second.skuId });
+    sim.shopClick({ type: "item", skuId: second.skuId });
     waitForFetch(sim);
     expect(sim.snapshot().awaitingBag).toBe(true);
     expect(sim.snapshot().highlightSkuId).toBeNull();
@@ -1206,7 +1206,7 @@ describe("GameSim order loops", () => {
   it("lets the driver leave a walk-in with the key lead instead of pinning them to the floor", () => {
     const sim = GameSim.create({ seed: 2, autoSpawn: false });
     fillTicket(sim, "delivery", { destinationId: "house-1" });
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
     waitForCustomerAtCounter(sim, walk.id);
     expect(sim.snapshot().canHitTheRoad).toBe(true);
     expect(sim.hitTheRoad()).toBe(true);
@@ -1221,7 +1221,7 @@ describe("GameSim order loops", () => {
     const sim = GameSim.create({ seed: 2, autoSpawn: false });
     const order = sim.spawnOrder("inStore");
     waitForCustomerAtCounter(sim, order.id);
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     expect(sim.snapshot().keyLead.phase).not.toBe("idle");
     for (let t = 0; t < INSTORE_WALKOUT_MS + 2_000; t += 50) sim.tick(50);
     expect(sim.orderById(order.id)?.status).toBe("failed");
@@ -1233,7 +1233,7 @@ describe("GameSim order loops", () => {
     const sim = GameSim.create({ seed: 1, autoSpawn: false });
     const order = sim.spawnOrder("pickup");
     sim.shopClick({ type: "tablet", orderId: order.id });
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     expect(sim.snapshot().keyLead.phase).toBe("toBack");
     sim.tick(8_000);
     expect(sim.snapshot().keyLead.phase).toBe("idle");
@@ -1250,7 +1250,7 @@ describe("key lead covering the counter while the van is out", () => {
 
   it("leaves the floor to the player while they are still in the shop", () => {
     const sim = GameSim.create({ seed: 6, autoSpawn: false });
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
     waitForCustomerAtCounter(sim, walk.id);
     expect(sim.snapshot().shopCover.active).toBe(false);
     for (let i = 0; i < 40; i++) sim.tick(50);
@@ -1261,7 +1261,7 @@ describe("key lead covering the counter while the van is out", () => {
   it("serves a walk-in who arrives after the van has already left", () => {
     const sim = GameSim.create({ seed: 6, autoSpawn: false });
     sendVanOut(sim);
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
     runCover(sim, () => sim.orderById(walk.id)?.status === "completed");
     expect(sim.orderById(walk.id)?.status).toBe("completed");
     expect(sim.score).toBe(SCORE_INSTORE);
@@ -1280,7 +1280,7 @@ describe("key lead covering the counter while the van is out", () => {
   it("packs and hands a pickup ticket that lands mid-run", () => {
     const sim = GameSim.create({ seed: 6, autoSpawn: false });
     sendVanOut(sim);
-    const pick = sim.spawnOrder("pickup", { ageOk: true });
+    const pick = sim.spawnOrder("pickup", { idMatches: true });
     runCover(sim, () => sim.orderById(pick.id)?.status === "completed");
     expect(sim.orderById(pick.id)?.status).toBe("completed");
     expect(sim.score).toBe(SCORE_PICKUP);
@@ -1292,7 +1292,7 @@ describe("key lead covering the counter while the van is out", () => {
     const sim = GameSim.create({ seed: 5, autoSpawn: false });
     sendVanOut(sim);
     const ids = Array.from({ length: 4 }, (_, n) =>
-      sim.spawnOrder(n % 2 ? "inStore" : "pickup", { ageOk: true }).id,
+      sim.spawnOrder(n % 2 ? "inStore" : "pickup", { idMatches: true }).id,
     );
     runCover(sim, () => ids.every((id) => sim.orderById(id)?.status === "completed"), 1_200);
     expect(ids.map((id) => sim.orderById(id)?.status)).toEqual(ids.map(() => "completed"));
@@ -1303,8 +1303,8 @@ describe("key lead covering the counter while the van is out", () => {
   it("keeps packing when the player drove off with a ticket already claimed", () => {
     const sim = GameSim.create({ seed: 6, autoSpawn: false });
     fillTicket(sim, "delivery", { destinationId: "house-1" });
-    const older = sim.spawnOrder("pickup", { ageOk: true });
-    const newer = sim.spawnOrder("pickup", { ageOk: true });
+    const older = sim.spawnOrder("pickup", { idMatches: true });
+    const newer = sim.spawnOrder("pickup", { idMatches: true });
     sim.shopClick({ type: "tablet", orderId: newer.id });
     expect(sim.snapshot().selectedOrderId).toBe(newer.id);
     expect(older.status).toBe("queued");
@@ -1321,8 +1321,8 @@ describe("key lead covering the counter while the van is out", () => {
   it("scores each covered order exactly once and cannot be paid twice", () => {
     const sim = GameSim.create({ seed: 6, autoSpawn: false });
     sendVanOut(sim);
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
-    const pick = sim.spawnOrder("pickup", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
+    const pick = sim.spawnOrder("pickup", { idMatches: true });
     runCover(sim, () =>
       [walk.id, pick.id].every((id) => sim.orderById(id)?.status === "completed"),
     );
@@ -1349,7 +1349,7 @@ describe("key lead covering the counter while the van is out", () => {
   it("holds the courier hour on a bag packed while the van is out until the driver is back", () => {
     const sim = GameSim.create({ seed: 5, autoSpawn: false });
     sendVanOut(sim);
-    const later = sim.spawnOrder("delivery", { destinationId: "house-3", ageOk: true });
+    const later = sim.spawnOrder("delivery", { destinationId: "house-3", idMatches: true });
     runCover(sim, () => sim.orderById(later.id)?.status === "inBin");
     expect(sim.orderById(later.id)?.status).toBe("inBin");
     expect(sim.orderById(later.id)?.slaStartGameMs).toBeUndefined();
@@ -1385,7 +1385,7 @@ describe("key lead covering the counter while the van is out", () => {
     expect(idle.line).toBe("Nobody waiting");
     expect(idle.served).toBe(0);
 
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
     sim.tick(50);
     const arriving = sim.snapshot().shopCover;
     expect(arriving.waiting).toBe(1);
@@ -1401,7 +1401,7 @@ describe("key lead covering the counter while the van is out", () => {
   it("resets the cover tally on each new run", () => {
     const sim = GameSim.create({ seed: 6, autoSpawn: false });
     sendVanOut(sim);
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
     runCover(sim, () => sim.orderById(walk.id)?.status === "completed");
     expect(sim.snapshot().shopCover.served).toBe(1);
 
@@ -1505,7 +1505,7 @@ describe("recurring walk-in traffic", () => {
     expect(sim.hitTheRoad()).toBe(true);
     const banner = sim.snapshot().toast;
     expect(banner).not.toBe("");
-    sim.spawnOrder("inStore", { ageOk: true });
+    sim.spawnOrder("inStore", { idMatches: true });
     expect(sim.snapshot().toast).toBe(banner);
   });
 });
@@ -1515,7 +1515,7 @@ describe("the key lead can be outrun by the counter", () => {
   function parkWithPile(sim: GameSim, bags: number): void {
     fillTicket(sim, "delivery", { destinationId: "house-1" });
     expect(sim.hitTheRoad()).toBe(true);
-    for (let i = 0; i < bags; i++) sim.spawnOrder("delivery", { ageOk: true });
+    for (let i = 0; i < bags; i++) sim.spawnOrder("delivery", { idMatches: true });
     runCover(sim, () => sim.snapshot().shopCover.packed >= bags, 1_600);
     expect(sim.snapshot().shopCover.packed).toBe(bags);
   }
@@ -1523,7 +1523,7 @@ describe("the key lead can be outrun by the counter", () => {
   it("covers a shallow counter at full speed, exactly as it always did", () => {
     const sim = GameSim.create({ seed: 5, autoSpawn: false });
     parkWithPile(sim, 2);
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
     runCover(sim, () => sim.orderById(walk.id)?.status !== "atRegister", 800);
     expect(sim.orderById(walk.id)?.status).toBe("completed");
     expect(sim.snapshot().shopCover.lost).toBe(0);
@@ -1532,7 +1532,7 @@ describe("the key lead can be outrun by the counter", () => {
   it("loses a walk-in when the counter is buried under undriven bags", () => {
     const sim = GameSim.create({ seed: 5, autoSpawn: false });
     parkWithPile(sim, 8);
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
     runCover(sim, () => sim.orderById(walk.id)?.status !== "atRegister", 800);
     expect(sim.orderById(walk.id)?.status).toBe("failed");
     expect(sim.snapshot().shopCover.lost).toBe(1);
@@ -1541,7 +1541,7 @@ describe("the key lead can be outrun by the counter", () => {
   it("tells the driver who is waiting, how deep, and who just left", () => {
     const sim = GameSim.create({ seed: 5, autoSpawn: false });
     parkWithPile(sim, 8);
-    const walk = sim.spawnOrder("inStore", { ageOk: true });
+    const walk = sim.spawnOrder("inStore", { idMatches: true });
 
     // While they are too deep to look up, the readout names the person and the pile.
     runCover(sim, () => sim.snapshot().shopCover.line.startsWith("Buried"), 400);
@@ -1595,7 +1595,7 @@ describe("resetting the day returns a cold start", () => {
     fillTicket(sim, "pickup");
     fillTicket(sim, "delivery", { destinationId: "house-1" });
     fillTicket(sim, "delivery", { destinationId: "house-4" });
-    sim.spawnOrder("delivery", { destinationId: "house-7", ageOk: true });
+    sim.spawnOrder("delivery", { destinationId: "house-7", idMatches: true });
 
     expect(sim.hitTheRoad()).toBe(true);
     for (let i = 0; i < 1_500 && sim.snapshot().autoDriving; i++) sim.tick(50);
@@ -1606,7 +1606,7 @@ describe("resetting the day returns a cold start", () => {
     }
 
     // Spawned last and walked only as far as the counter, so they cannot time out first.
-    const walkIn = sim.spawnOrder("inStore", { ageOk: true });
+    const walkIn = sim.spawnOrder("inStore", { idMatches: true });
     waitForCustomerAtCounter(sim, walkIn.id);
     return { walkInId: walkIn.id };
   }
@@ -1700,8 +1700,8 @@ describe("resetting the day returns a cold start", () => {
     const sim = GameSim.create({ seed: 5, autoSpawn: false });
     fillTicket(sim, "delivery", { destinationId: "house-1" });
     expect(sim.hitTheRoad()).toBe(true);
-    for (let i = 0; i < 6; i++) sim.spawnOrder("delivery", { ageOk: true });
-    sim.spawnOrder("inStore", { ageOk: true });
+    for (let i = 0; i < 6; i++) sim.spawnOrder("delivery", { idMatches: true });
+    sim.spawnOrder("inStore", { idMatches: true });
     runCover(sim, () => sim.snapshot().shopCover.lost > 0, 1_600);
 
     const busy = sim.snapshot().shopCover;
@@ -1760,7 +1760,7 @@ describe("resetting the day returns a cold start", () => {
     const sim = GameSim.create({ seed: 8, autoSpawn: false });
     const order = sim.spawnOrder("pickup");
     sim.shopClick({ type: "tablet", orderId: order.id });
-    sim.shopClick({ type: "strain", skuId: order.skuId });
+    sim.shopClick({ type: "item", skuId: order.skuId });
     waitForFetch(sim);
     sim.shopClick({ type: "bagRack" });
     waitForCustomerAtCounter(sim, order.id);
@@ -1782,7 +1782,7 @@ describe("resetting the day returns a cold start", () => {
     // Nothing to do on an empty floor, and the first ticket draws the hint back to the
     // tablet — the same first step a player sees on a cold start.
     expect(tutorialHints(sim.snapshot())).toEqual([]);
-    const fresh = sim.spawnOrder("pickup", { ageOk: true });
+    const fresh = sim.spawnOrder("pickup", { idMatches: true });
     expect(tutorialHints(sim.snapshot())).toEqual([
       expect.objectContaining({ kind: "tablet", orderId: fresh.id }),
     ]);

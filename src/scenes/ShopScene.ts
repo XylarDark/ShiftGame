@@ -41,9 +41,9 @@ import {
   TV_BEZEL,
   TV_W,
   ceilingPots,
-  strainLabelPos,
-  strainPos,
-  strainSlotH,
+  itemLabelPos,
+  itemPos,
+  itemSlotH,
   tabletLayout,
 } from "../maps/shopT0";
 import { enableItemHit } from "../input/hit";
@@ -102,7 +102,7 @@ import {
 import { typeRoleBox, typeRolePx } from "../ui/typeScale";
 
 /**
- * Strain names on the wall screens run 21% over the heading step, then clamp-fit
+ * Item names on the wall screens run 21% over the heading step, then clamp-fit
  * against {@link MENU_TYPE_FIT} so a phone contain cannot drop them under the
  * menu CSS floor.
  */
@@ -610,10 +610,10 @@ export class ShopScene extends Phaser.Scene {
       this.targetCallout.setVisible(false);
       return;
     }
-    const p = strainPos(idx);
+    const p = itemPos(idx);
     if (this.targetCallout.text !== cue.text) this.targetCallout.setText(cue.text);
     this.targetCallout.setVisible(true);
-    setSignPlaqueCenter(this.targetCallout, p.x, p.y - strainSlotH() / 2 - 6);
+    setSignPlaqueCenter(this.targetCallout, p.x, p.y - itemSlotH() / 2 - 6);
   }
 
   private departNow(): void {
@@ -1042,13 +1042,13 @@ export class ShopScene extends Phaser.Scene {
     const sim = getSim();
     this.skuById = new Map(sim.catalog.map((s) => [s.id, s]));
     sim.catalog.forEach((sku, i) => {
-      const slot = strainPos(i);
-      const labelPos = strainLabelPos(i);
-      const slotH = strainSlotH();
+      const slot = itemPos(i);
+      const labelPos = itemLabelPos(i);
+      const slotH = itemSlotH();
       const glassW = TV_W - TV_BEZEL * 2;
       const screen = this.add.rectangle(slot.x, slot.y, glassW - 8, slotH - 4, sku.color, 0.35).setDepth(5);
       enableItemHit(screen);
-      this.wireShopTap(screen, 1, () => getSim().shopClick({ type: "strain", skuId: sku.id }));
+      this.wireShopTap(screen, 1, () => getSim().shopClick({ type: "item", skuId: sku.id }));
       this.tvs.push(screen);
       this.jarSkus.push(sku.id);
       const maxW = glassW - 16;

@@ -34,6 +34,7 @@ Shop (tap / click):
 Drive:
 - **Auto-drive** between stops (primary). On-screen pad + WASD/arrows nudge if you need to steer
 - At each stop: **call** → **ASK ID** → **CHECK ID** → **HAND BAG** → **PHOTO**
+- **CHECK ID:** the name on the card has to match the order. If it doesn't, deny the handoff and move on
 - Tap the shop when you return
 
 Settings (Music · Settings cog): volume/mute, **End shift** (after any scored action), or reset the clock to 9:00 AM.

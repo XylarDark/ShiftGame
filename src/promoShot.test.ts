@@ -17,6 +17,20 @@ describe("applyPromoShot", () => {
     expect(snap.autoDriving || snap.dropoff.phase === "atCurb").toBe(true);
   });
 
+  it("seeds a matching ID by default and a mismatched one with ?idmatch=0", () => {
+    for (const [search, matches] of [
+      ["?shot=drive", true],
+      ["?shot=drive&idmatch=0", false],
+    ] as const) {
+      vi.stubGlobal("location", { search });
+      const sim = GameSim.create({ seed: 4, autoSpawn: false });
+      applyPromoShot(sim);
+      const view = sim.snapshot().orders.find((o) => o.type === "delivery");
+      expect(view, search).toBeDefined();
+      expect(sim.orderById(view!.id)?.idMatches, search).toBe(matches);
+    }
+  });
+
   it("aims the seeded run at the lot ?house names, in either spelling", () => {
     for (const search of ["?shot=drive&house=5", "?shot=drive&house=house-5"]) {
       vi.stubGlobal("location", { search });

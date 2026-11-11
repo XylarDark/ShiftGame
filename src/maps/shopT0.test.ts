@@ -18,9 +18,9 @@ import {
   customerSlotX,
   customerSpeechShows,
   customerSpeechWidth,
-  STRAIN_LABEL_OPTICAL_Y,
-  strainLabelPos,
-  strainPos,
+  ITEM_LABEL_OPTICAL_Y,
+  itemLabelPos,
+  itemPos,
   PERSON_DISPLAY_H,
   PERSON_DISPLAY_MAX_H,
   customerFeetY,
@@ -164,14 +164,14 @@ describe("customer standing slots", () => {
   });
 });
 
-describe("menu board strain rows", () => {
+describe("menu board item rows", () => {
   it("nudges row labels down for optical centre inside each slot", () => {
-    expect(STRAIN_LABEL_OPTICAL_Y).toBeGreaterThan(0);
-    expect(STRAIN_LABEL_OPTICAL_Y).toBeLessThanOrEqual(6);
-    const label = strainLabelPos(0);
-    const slot = strainPos(0);
+    expect(ITEM_LABEL_OPTICAL_Y).toBeGreaterThan(0);
+    expect(ITEM_LABEL_OPTICAL_Y).toBeLessThanOrEqual(6);
+    const label = itemLabelPos(0);
+    const slot = itemPos(0);
     expect(label.x).toBe(slot.x);
-    expect(label.y).toBe(slot.y + STRAIN_LABEL_OPTICAL_Y);
+    expect(label.y).toBe(slot.y + ITEM_LABEL_OPTICAL_Y);
   });
 });
 

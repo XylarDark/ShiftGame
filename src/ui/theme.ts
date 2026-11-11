@@ -1,4 +1,4 @@
-/** Kindling visual tokens — dusk dispensary, chunky wood, muted leaf. */
+/** Shift visual tokens — dusk corner shop, chunky wood, muted leaf green. */
 import { GAME_WIDTH } from "../sim/constants";
 import { getStageContainScale } from "./viewFit";
 
@@ -124,7 +124,7 @@ export const MSG_TYPE_FIT = { minCssFloor: MSG_MIN_CSS_PX, maxCssCeiling: MSG_MA
 /** Spread onto SCORE / clock / cog / phone chrome. */
 export const HUD_TYPE_FIT = { minCssFloor: HUD_CHROME_MIN_CSS_PX, maxCssCeiling: HUD_CHROME_MAX_CSS_PX } as const;
 
-/** Spread onto TV strain names, settings, results, title cards. */
+/** Spread onto TV item names, settings, results, title cards. */
 export const MENU_TYPE_FIT = { minCssFloor: TV_MENU_MIN_CSS_PX, maxCssCeiling: TV_MENU_MAX_CSS_PX } as const;
 
 /** Extra padding scale on message chips while the mobile ramp is active. */
@@ -226,7 +226,7 @@ export function msgMinFitPx(stageScale = getStageContainScale()): number {
 
 /**
  * HUD chrome: apply {@link MOBILE_TEXT_SCALE} (not MSG_SCALE) + CSS floor.
- * Use for SCORE / clock / ORDERS-adjacent labels — not TV board strain names.
+ * Use for SCORE / clock / ORDERS-adjacent labels — not TV board item names.
  */
 export function scaleChromePx(
   px: number,

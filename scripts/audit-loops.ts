@@ -49,7 +49,7 @@ function stepDoor(sim: GameSim): void {
 function fillInStore(sim: GameSim): string {
   const order = sim.spawnOrder("inStore");
   waitCounter(sim, order.id);
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   waitFetch(sim);
   sim.shopClick({ type: "customer", orderId: order.id });
   return order.id;
@@ -58,11 +58,11 @@ function fillInStore(sim: GameSim): string {
 function fillTicket(
   sim: GameSim,
   type: "pickup" | "delivery",
-  extra?: { destinationId?: string; ageOk?: boolean },
+  extra?: { destinationId?: string; idMatches?: boolean },
 ) {
-  const order = sim.spawnOrder(type, { ...extra, ageOk: extra?.ageOk ?? true });
+  const order = sim.spawnOrder(type, { ...extra, idMatches: extra?.idMatches ?? true });
   sim.shopClick({ type: "tablet", orderId: order.id });
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   waitFetch(sim);
   sim.shopClick({ type: "bagRack" });
   return order;
@@ -117,10 +117,10 @@ function finishDoor(sim: GameSim, houseId: string): void {
   rec("2-pickup", sim.orderById(order.id)?.status === "completed" && sim.score === SCORE_PICKUP, `status=${sim.orderById(order.id)?.status} score=${sim.score}`);
 }
 
-// Pass 3: single delivery 19+
+// Pass 3: single delivery, matching ID
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+  const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
   sim.hitTheRoad();
   finishDoor(sim, "house-1");
   rec(
@@ -130,10 +130,10 @@ function finishDoor(sim: GameSim, houseId: string): void {
   );
 }
 
-// Pass 4: under-19
+// Pass 4: mismatched ID
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: false });
+  const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: false });
   sim.hitTheRoad();
   const stop = houseById("house-1")!;
   const pos = tileToWorld(stop.stop);
@@ -144,18 +144,18 @@ function finishDoor(sim: GameSim, houseId: string): void {
   stepDoor(sim); // ask
   stepDoor(sim); // check deny
   rec(
-    "4-under19",
+    "4-id-mismatch",
     sim.orderById(order.id)?.status === "failed" && sim.score === SCORE_FAIL && (sim.snapshot().shiftResults === null),
     `status=${sim.orderById(order.id)?.status} score=${sim.score} toast=${sim.snapshot().toast.slice(0, 70)}`,
   );
-  rec("4-under19-flash", sim.snapshot().scoreFlash?.delta === SCORE_FAIL, `flash=${sim.snapshot().scoreFlash?.delta}`);
+  rec("4-id-mismatch-flash", sim.snapshot().scoreFlash?.delta === SCORE_FAIL, `flash=${sim.snapshot().scoreFlash?.delta}`);
 }
 
 // Pass 5: multi-stop
 {
   const sim = GameSim.create({ seed: 7, autoSpawn: false });
-  const a = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
-  const b = fillTicket(sim, "delivery", { destinationId: "house-2", ageOk: true });
+  const a = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
+  const b = fillTicket(sim, "delivery", { destinationId: "house-2", idMatches: true });
   sim.hitTheRoad();
   finishDoor(sim, "house-1");
   const mid = sim.orderById(a.id)?.status === "completed" && sim.orderById(b.id)?.status === "onRun";
@@ -170,7 +170,7 @@ function finishDoor(sim: GameSim, houseId: string): void {
 // Pass 6: late delivery
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+  const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
   sim.hitTheRoad();
   sim.tick(MS_PER_GAME_HOUR + 50);
   finishDoor(sim, "house-1");
@@ -184,7 +184,7 @@ function finishDoor(sim: GameSim, houseId: string): void {
 // Pass 7: 23:00 mid-door
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+  fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
   sim.hitTheRoad();
   const stop = houseById("house-1")!;
   const pos = tileToWorld(stop.stop);
@@ -208,7 +208,7 @@ function finishDoor(sim: GameSim, houseId: string): void {
   const order = sim.spawnOrder("inStore");
   waitCounter(sim, order.id);
   const other = sim.catalog.find((s) => s.id !== order.skuId)!;
-  sim.shopClick({ type: "strain", skuId: other.id });
+  sim.shopClick({ type: "item", skuId: other.id });
   waitFetch(sim);
   const before = sim.score;
   sim.shopClick({ type: "customer", orderId: order.id });
@@ -229,7 +229,7 @@ function finishDoor(sim: GameSim, houseId: string): void {
   const canGo = sim.snapshot().canHitTheRoad;
   rec(
     "9-hint-vs-driver-flash",
-    hint?.kind === "strain" || hint?.kind === "customer",
+    hint?.kind === "item" || hint?.kind === "customer",
     `hint=${hint?.kind} canHitTheRoad=${canGo} (ShopScene flashes driver whenever canGo — dual flash risk)`,
   );
 }
@@ -247,7 +247,7 @@ function finishDoor(sim: GameSim, houseId: string): void {
 // Hint kind coverage
 {
   const kinds = new Set([
-    "strain",
+    "item",
     "bagRack",
     "tablet",
     "customer",

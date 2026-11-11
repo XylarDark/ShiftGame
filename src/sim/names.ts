@@ -1,35 +1,39 @@
+/**
+ * Shop item names are "Adjective Noun" pairs drawn from a neutral
+ * gift-and-general-store shelf (kettles, candles, quilts, puzzles).
+ */
 const ADJECTIVES = [
   "Moonlit",
   "Velvet",
   "Cosmic",
-  "Sticky",
+  "Maple",
   "Golden",
-  "Foggy",
+  "Harbor",
   "Neon",
-  "Sleepy",
-  "Zesty",
+  "Cozy",
+  "Sunny",
   "Polar",
   "Ember",
   "Amber",
-  "Hazy",
+  "Crisp",
   "Sparkling",
   "Midnight",
 ];
 
 const NOUNS = [
-  "Cheese",
+  "Kettle",
   "Spark",
-  "Sherbet",
+  "Candle",
   "Pebble",
   "Comet",
   "Noodle",
   "Lantern",
   "Biscuit",
-  "Thunder",
+  "Teapot",
   "Daisy",
-  "Nugget",
-  "Drift",
-  "Mango",
+  "Blanket",
+  "Puzzle",
+  "Mitten",
   "Quilt",
   "Compass",
 ];
@@ -91,6 +95,18 @@ const LAST = [
   "Lenz",
   "Hart",
 ];
+/**
+ * The same first name with a different surname, for an ID that doesn't match its
+ * order. Deterministic in `h`, and never returns the original name.
+ */
+export function mismatchedName(name: string, h: number): string {
+  const [first, ...rest] = name.split(" ");
+  const last = rest.join(" ");
+  let pick = LAST[h % LAST.length]!;
+  if (pick === last) pick = LAST[(h + 1) % LAST.length]!;
+  return `${first} ${pick}`;
+}
+
 export function generateNames(count: number, seed: number): string[] {
   const rng = mulberry32(seed);
   const names = new Set<string>();

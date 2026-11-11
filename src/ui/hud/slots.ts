@@ -25,7 +25,7 @@ export const SLOT_GUTTER = 12;
  * | speech-*      | Above settled customer head | Counter order announce |
  * | leadBubble    | Between key-lead head and TVs | Shop fetch/hold callout |
  * | driverBubble  | Above driver head | Shop ready line |
- * | tvCallout     | Above targeted TV anchor | Shop strain hint |
+ * | tvCallout     | Above targeted TV anchor | Shop item hint |
  * | drivePin      | Top-center safe inset | Active delivery house + customer + SLA |
  * | driveVan      | (hidden) | Removed — van toast banner off map |
  * | driveShop     | (hidden) | Removed — shop-lot caption off map |

@@ -1,6 +1,7 @@
 import { generateNames } from "./names";
 
-export type SkuType = "flower" | "edible" | "preroll";
+/** Shelf category; only tints the item's menu-board row. */
+export type SkuType = "pantry" | "treat" | "home";
 
 export interface Sku {
   id: string;
@@ -9,12 +10,12 @@ export interface Sku {
   color: number;
 }
 
-const TYPES: SkuType[] = ["flower", "edible", "preroll"];
+const TYPES: SkuType[] = ["pantry", "treat", "home"];
 
 const TYPE_COLORS: Record<SkuType, number> = {
-  flower: 0x4fae5a,
-  edible: 0xe07aa0,
-  preroll: 0xd4a054,
+  pantry: 0x4fae5a,
+  treat: 0xe07aa0,
+  home: 0xd4a054,
 };
 
 export const CATALOG_SIZE = 9;

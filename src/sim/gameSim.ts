@@ -51,7 +51,7 @@ import {
   tickDropoffGate,
   type DropoffConfirmGate,
 } from "./dropoffConfirm";
-import { ageForSeed, emptyDropoff, idCardFor, type DropoffPhase, type DropoffView } from "./dropoff";
+import { ageForSeed, emptyDropoff, idCardFor, idMatchesForSeed, type DropoffPhase, type DropoffView } from "./dropoff";
 import { destLabel, isOpen, needsFetch, tabletQueue, type Order, type OrderType } from "./orders";
 import {
   advanceRoute,
@@ -91,7 +91,7 @@ export type PlayerRole = "keyLead" | "driver";
 export type ShopClick =
   | { type: "keyLead" }
   | { type: "bagRack" }
-  | { type: "strain"; skuId: string }
+  | { type: "item"; skuId: string }
   | { type: "tablet"; orderId: string }
   | { type: "handoff" }
   | { type: "customer"; orderId: string };
@@ -196,14 +196,14 @@ export interface SimSnapshot {
   toast: string;
   /** Light spawn / ticket notice on the ORDERS tablet (shop). */
   ordersNotice: string | null;
-  /** Wrong-TV / jar callout anchored near that strain slot. */
+  /** Wrong-TV / item callout anchored near that item slot. */
   targetCallout: { skuId: string; text: string } | null;
   serveLine: string;
   highlightSkuId: string | null;
   canHitTheRoad: boolean;
   tabletTicket: OrderView | null;
   tabletQueueCount: number;
-  /** After tapping a ticket: "Pickup: [strain] for [customer]". */
+  /** After tapping a ticket: "Pickup: [item] for [customer]". */
   keyLeadLine: string | null;
   /** After tapping a delivery: "Ok, off I go." */
   driverLine: string | null;
@@ -272,7 +272,7 @@ export class GameSim {
   input = { dx: 0, dy: 0 };
   autoSpawn: boolean;
   shiftEnded = false;
-  private under19Fails = 0;
+  private idMismatchFails = 0;
   private scoredActions = 0;
   private scoreFlash: ScoreFlash | null = null;
   private scoreFlashSeq = 0;
@@ -418,7 +418,7 @@ export class GameSim {
     this.touch();
     this.shiftEnded = false;
     this.score = 0;
-    this.under19Fails = 0;
+    this.idMismatchFails = 0;
     this.scoredActions = 0;
     this.scoreFlash = null;
     this.sfxCue = null;
@@ -556,7 +556,7 @@ export class GameSim {
       driverLine: this.playerRole === "keyLead" ? this.driverLine : null,
       shiftEnded: this.shiftEnded,
       shiftResults: this.shiftEnded
-        ? buildShiftResults(this.shiftLedger.concat(this.orders), this.score, this.clock.gameMs, this.under19Fails)
+        ? buildShiftResults(this.shiftLedger.concat(this.orders), this.score, this.clock.gameMs, this.idMismatchFails)
         : null,
       canEndShiftEarly: !this.shiftEnded && this.scoredActions >= 1,
       scoreFlash: this.scoreFlash,
@@ -608,8 +608,8 @@ export class GameSim {
       case "bagRack":
         this.packSelected();
         return;
-      case "strain":
-        this.pickStrain(click.skuId);
+      case "item":
+        this.pickItem(click.skuId);
         return;
       case "tablet":
         this.selectTicket(click.orderId);
@@ -629,7 +629,7 @@ export class GameSim {
     this.vehicle.y = y;
   }
 
-  spawnOrder(type: OrderType, opts: { skuId?: string; destinationId?: string; ageOk?: boolean } = {}): Order {
+  spawnOrder(type: OrderType, opts: { skuId?: string; destinationId?: string; idMatches?: boolean } = {}): Order {
     this.touch();
     const sku = opts.skuId
       ? skuById(this.catalog, opts.skuId)
@@ -637,8 +637,8 @@ export class GameSim {
     if (!sku) throw new Error("catalog empty");
     const id = `ord-${this.nextOrderId++}`;
     const customerName = generateCustomerName(this.nameSeed++);
-    const seededAge = ageForSeed(`${id}:${customerName}`);
-    const idAge = opts.ageOk === true ? Math.max(19, seededAge) : opts.ageOk === false ? 16 + (seededAge % 3) : seededAge;
+    const idAge = ageForSeed(`${id}:${customerName}`);
+    const idMatches = opts.idMatches ?? idMatchesForSeed(`${id}:${customerName}`);
     const order: Order = {
       id,
       type,
@@ -647,6 +647,7 @@ export class GameSim {
       createdAtGameMs: this.clock.gameMs,
       customerName,
       idAge,
+      idMatches,
       destinationId: type === "delivery" ? (opts.destinationId ?? this.nextHouse()) : undefined,
     };
     this.orders.push(order);
@@ -866,7 +867,7 @@ export class GameSim {
     }
     if (this.handSkuId !== order.skuId) {
       this.setOrdersNotice(`Wrong item for ${order.customerName}.`);
-      this.setTargetCallout(this.handSkuId, "Wrong jar");
+      this.setTargetCallout(this.handSkuId, "Wrong item");
       return;
     }
     this.touch();
@@ -881,7 +882,7 @@ export class GameSim {
     return order;
   }
 
-  private pickStrain(skuId: string): void {
+  private pickItem(skuId: string): void {
     const sku = skuById(this.catalog, skuId);
     if (!sku) return;
     if (this.keyLeadPhase !== "idle") {
@@ -1143,9 +1144,9 @@ export class GameSim {
     if (this.handSkuId !== target.skuId) {
       this.setCustomerFeedback(
         target.id,
-        `Wrong TV — wants ${sku?.name ?? "a different jar"}.`,
+        `Wrong TV — wants ${sku?.name ?? "a different item"}.`,
       );
-      this.setTargetCallout(this.handSkuId, "Wrong jar");
+      this.setTargetCallout(this.handSkuId, "Wrong item");
       this.pushSfx("wrong");
       return true;
     }
@@ -1625,7 +1626,7 @@ export class GameSim {
       return true;
     }
     if (this.handSkuId === walkIn.skuId) this.shopClick({ type: "customer", orderId: walkIn.id });
-    else this.shopClick({ type: "strain", skuId: walkIn.skuId });
+    else this.shopClick({ type: "item", skuId: walkIn.skuId });
     return true;
   }
 
@@ -1652,9 +1653,9 @@ export class GameSim {
       this.beginTicket(next);
       return true;
     }
-    // A jar in hand that this ticket does not want gets swapped by re-tapping the right TV.
+    // An item in hand that this ticket does not want gets swapped by re-tapping the right TV.
     if (this.handSkuId === ticket.skuId) this.shopClick({ type: "bagRack" });
-    else this.shopClick({ type: "strain", skuId: ticket.skuId });
+    else this.shopClick({ type: "item", skuId: ticket.skuId });
     return true;
   }
 
@@ -1828,15 +1829,17 @@ export class GameSim {
 
     if (!d.idAsked) {
       d.idAsked = true;
-      this.toast = `${order.customerName} is showing ID. Confirm 19+.`;
+      this.toast = `${order.customerName} is showing ID. Check the name matches the order.`;
       this.armDropoffInteract();
       return;
     }
 
-    const card = idCardFor(order.customerName, order.idAge);
+    const card = idCardFor(order.customerName, order.idAge, order.idMatches);
     if (!d.idChecked) {
-      if (!card.ageOk) {
-        this.failOrder(order, `ID check failed — ${order.customerName} is under 19.`);
+      if (!card.matches) {
+        this.failOrder(order, `ID check failed — the name doesn't match ${order.customerName}'s order.`, {
+          idMismatch: true,
+        });
         this.refreshDriveRoute();
         this.toast =
           this.runOrderIds.length === 0
@@ -1849,7 +1852,7 @@ export class GameSim {
         return;
       }
       d.idChecked = true;
-      this.toast = `ID checks out — 19+. Hand ${order.customerName} the bag.`;
+      this.toast = `ID matches the order. Hand ${order.customerName} the bag.`;
       this.releaseDropoffConfirm();
       // Full cooldown so the ID tap cannot click through into bag/photo.
       this.armDropoffInteract(NPC_INTERACT_COOLDOWN_MS);
@@ -1974,7 +1977,7 @@ export class GameSim {
     } else if (d.phase === "atDoor" && !d.idChecked) {
       actionLabel = "CHECK ID";
       canAct = true;
-      hint = `Tap the ID card to confirm ${order?.customerName ?? "they"} are 19+.`;
+      hint = `Tap the ID card to confirm it matches ${order ? `${order.customerName}'s` : "the"} order.`;
     } else if (d.phase === "atDoor" && !d.bagHanded) {
       actionLabel = "HAND BAG";
       canAct = true;
@@ -2006,7 +2009,7 @@ export class GameSim {
       hint,
       idCard:
         d.phase === "atDoor" && d.idAsked && !d.idChecked && order
-          ? idCardFor(order.customerName, order.idAge)
+          ? idCardFor(order.customerName, order.idAge, order.idMatches)
           : null,
       interactArmed,
     };
@@ -2100,7 +2103,7 @@ export class GameSim {
     this.archiveTerminalOrder(order);
   }
 
-  private failOrder(order: Order, reason: string): void {
+  private failOrder(order: Order, reason: string, opts: { idMismatch?: boolean } = {}): void {
     if (this.shiftEnded) return;
     this.touch();
     order.status = "failed";
@@ -2113,14 +2116,14 @@ export class GameSim {
     this.score += delta;
     this.pushScoreFlash(delta, this.scorePopAnchor(order));
     this.scoredActions += 1;
-    if (reason.includes("under 19")) this.under19Fails += 1;
+    if (opts.idMismatch) this.idMismatchFails += 1;
     this.customers = this.customers.filter((c) => c.orderId !== order.id);
     if (this.selectedOrderId === order.id) this.selectedOrderId = null;
     this.dropQueuedTicket(order.id);
     this.advancePackQueue();
     this.runOrderIds = this.runOrderIds.filter((id) => id !== order.id);
     if (this.dropoff?.orderId === order.id) this.clearDropoff();
-    // Drop leftover fetch/hand when this order (or its SKU) was in flight — avoids ghost jars after walkout.
+    // Drop leftover fetch/hand when this order (or its SKU) was in flight — avoids ghost items after walkout.
     if (
       order.type === "inStore" ||
       this.fetchSkuId === order.skuId ||
@@ -2195,7 +2198,7 @@ export class GameSim {
     this.customerFeedback.delete(orderId);
   }
 
-  /** Wrong-TV / jar cue near the tapped strain; cleared on the next successful fetch. */
+  /** Wrong-TV / item cue near the tapped item; cleared on the next successful fetch. */
   private setTargetCallout(skuId: string, text: string): void {
     const cur = this.targetCallout;
     if (cur?.skuId === skuId && cur.text === text) return;

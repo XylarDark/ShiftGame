@@ -46,11 +46,11 @@ function stepDoor(sim: GameSim): void {
 function fillTicket(
   sim: GameSim,
   type: "pickup" | "delivery",
-  extra?: { destinationId?: string; ageOk?: boolean },
+  extra?: { destinationId?: string; idMatches?: boolean },
 ) {
-  const order = sim.spawnOrder(type, { ...extra, ageOk: extra?.ageOk ?? true });
+  const order = sim.spawnOrder(type, { ...extra, idMatches: extra?.idMatches ?? true });
   sim.shopClick({ type: "tablet", orderId: order.id });
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   waitFetch(sim);
   sim.shopClick({ type: "bagRack" });
   return order;
@@ -72,7 +72,7 @@ function spamInteract(sim: GameSim, n: number): void {
 // --- 1. Spam door at each step: at most one advance per arm window ---
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+  fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
   sim.hitTheRoad();
   startDoor(sim, "house-1");
   spamInteract(sim, 8);
@@ -124,10 +124,10 @@ function spamInteract(sim: GameSim, n: number): void {
   );
 }
 
-// --- 2. Under-19 deny then spam ---
+// --- 2. Mismatched-ID deny then spam ---
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  const order = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: false });
+  const order = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: false });
   sim.hitTheRoad();
   startDoor(sim, "house-1");
   stepDoor(sim); // ask
@@ -182,7 +182,7 @@ function spamInteract(sim: GameSim, n: number): void {
     {
       name: "CHECK",
       prep: (s) => {
-        fillTicket(s, "delivery", { destinationId: "house-1", ageOk: true });
+        fillTicket(s, "delivery", { destinationId: "house-1", idMatches: true });
         s.hitTheRoad();
         startDoor(s, "house-1");
         stepDoor(s);
@@ -191,7 +191,7 @@ function spamInteract(sim: GameSim, n: number): void {
     {
       name: "HAND",
       prep: (s) => {
-        fillTicket(s, "delivery", { destinationId: "house-1", ageOk: true });
+        fillTicket(s, "delivery", { destinationId: "house-1", idMatches: true });
         s.hitTheRoad();
         startDoor(s, "house-1");
         stepDoor(s);
@@ -201,7 +201,7 @@ function spamInteract(sim: GameSim, n: number): void {
     {
       name: "PHOTO",
       prep: (s) => {
-        fillTicket(s, "delivery", { destinationId: "house-1", ageOk: true });
+        fillTicket(s, "delivery", { destinationId: "house-1", idMatches: true });
         s.hitTheRoad();
         startDoor(s, "house-1");
         stepDoor(s);
@@ -315,7 +315,7 @@ function spamInteract(sim: GameSim, n: number): void {
   const sim = GameSim.create({ seed: 2, autoSpawn: false });
   const order = sim.spawnOrder("inStore");
   waitCounter(sim, order.id);
-  sim.shopClick({ type: "strain", skuId: order.skuId });
+  sim.shopClick({ type: "item", skuId: order.skuId });
   const midPhase = sim.snapshot().keyLead.phase;
   // Many small ticks (real frame cadence) through walkout window
   for (let t = 0; t < INSTORE_WALKOUT_MS + 2000; t += 50) sim.tick(50);
@@ -330,7 +330,7 @@ function spamInteract(sim: GameSim, n: number): void {
   const hitch = GameSim.create({ seed: 2, autoSpawn: false });
   const o2 = hitch.spawnOrder("inStore");
   waitCounter(hitch, o2.id);
-  hitch.shopClick({ type: "strain", skuId: o2.skuId });
+  hitch.shopClick({ type: "item", skuId: o2.skuId });
   hitch.tick(INSTORE_WALKOUT_MS + 5000);
   const hitchSnap = hitch.snapshot();
   const hitchStatus = hitch.orderById(o2.id)?.status;
@@ -370,8 +370,8 @@ function expect(cond: boolean): void {
 // --- 10. Multi-stop wrong house lock ---
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  const first = fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
-  fillTicket(sim, "delivery", { destinationId: "house-2", ageOk: true });
+  const first = fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
+  fillTicket(sim, "delivery", { destinationId: "house-2", idMatches: true });
   sim.hitTheRoad();
   startDoor(sim, "house-1");
   stepDoor(sim); // ask
@@ -446,7 +446,7 @@ function expect(cond: boolean): void {
 // --- Bonus: queuedInteract after shift end ---
 {
   const sim = GameSim.create({ seed: 4, autoSpawn: false });
-  fillTicket(sim, "delivery", { destinationId: "house-1", ageOk: true });
+  fillTicket(sim, "delivery", { destinationId: "house-1", idMatches: true });
   sim.hitTheRoad();
   startDoor(sim, "house-1");
   sim.endShift();
@@ -481,12 +481,12 @@ function expect(cond: boolean): void {
   const sim = GameSim.create({ seed: 2, autoSpawn: false });
   const o = sim.spawnOrder("inStore");
   waitCounter(sim, o.id);
-  sim.shopClick({ type: "strain", skuId: o.skuId });
+  sim.shopClick({ type: "item", skuId: o.skuId });
   waitFetch(sim);
   sim.shopClick({ type: "customer", orderId: o.id });
   sim.endShift();
   const score = sim.score;
-  sim.shopClick({ type: "strain", skuId: o.skuId });
+  sim.shopClick({ type: "item", skuId: o.skuId });
   rec("G15-shop-after-end", sim.score === score && sim.snapshot().shiftEnded, `score frozen at ${score}`, "P1");
 }
 

@@ -56,7 +56,7 @@ function drawSignature(g: Phaser.GameObjects.Graphics, name: string, x: number, 
 export interface IdCardPayload {
   name: string;
   dob: string;
-  ageOk: boolean;
+  matches: boolean;
   age: number;
   idNumber: string;
   expires: string;
@@ -180,7 +180,7 @@ export class HudIdCard {
       maxWidth: ID_FIELD_W,
       maxHeight: 30,
     }).setOrigin(0, 0);
-    this.idHint = addUiText(this.scene, 0, halfH - ID_PAD - 20, "Tap the card to confirm 19+", {
+    this.idHint = addUiText(this.scene, 0, halfH - ID_PAD - 20, "Name matches — tap the card to confirm", {
       size: ID_HINT_PX,
       color: Color.creamHex,
       fontStyle: "700",
@@ -238,7 +238,7 @@ export class HudIdCard {
     sigLabel.setPosition(photoX, sigTop + 44);
 
     this.idName.setText("SAMPLE CUSTOMER");
-    this.idDob.setText("JAN 01 2000   ·   19+");
+    this.idDob.setText("JAN 01 2000");
     this.idNumber.setText("K-0000-00");
     this.idExpiry.setText("EXP 01/30");
 
@@ -262,13 +262,13 @@ export class HudIdCard {
   }
 
   paintIdCard(card: IdCardPayload, idNo: string): void {
-    const key = `${card.name}|${card.dob}|${card.ageOk}|${idNo}`;
+    const key = `${card.name}|${card.dob}|${card.matches}|${idNo}`;
     if (key === this.idDrawnFor) return;
     this.idDrawnFor = key;
 
     const halfW = ID_CARD_W / 2;
     const halfH = ID_CARD_H / 2;
-    const ink = card.ageOk ? ID_OK_INK : ID_DENY_INK;
+    const ink = card.matches ? ID_OK_INK : ID_DENY_INK;
     const photoX = -halfW + ID_PAD;
     const photoTop = -halfH + ID_HEADER_H + ID_PAD;
     const sigTop = photoTop + ID_PHOTO_H + 14;
