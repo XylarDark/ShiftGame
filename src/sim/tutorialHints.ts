@@ -1,7 +1,7 @@
 import type { SimSnapshot } from "./gameSim";
 
 export type TutorialHint =
-  | { id: string; kind: "strain"; skuId: string }
+  | { id: string; kind: "item"; skuId: string }
   | { id: string; kind: "bagRack" }
   | { id: string; kind: "tablet"; orderId: string }
   | { id: string; kind: "customer"; orderId: string }
@@ -31,7 +31,7 @@ export function nextShopHint(snap: SimSnapshot): TutorialHint | null {
     if (snap.handSkuId === walkIn.skuId) {
       return { id: `customer:${walkIn.id}`, kind: "customer", orderId: walkIn.id };
     }
-    return { id: `strain:${walkIn.skuId}`, kind: "strain", skuId: walkIn.skuId };
+    return { id: `item:${walkIn.skuId}`, kind: "item", skuId: walkIn.skuId };
   }
 
   if (busy) return null;
@@ -41,7 +41,7 @@ export function nextShopHint(snap: SimSnapshot): TutorialHint | null {
   }
 
   if (snap.highlightSkuId) {
-    return { id: `strain:${snap.highlightSkuId}`, kind: "strain", skuId: snap.highlightSkuId };
+    return { id: `item:${snap.highlightSkuId}`, kind: "item", skuId: snap.highlightSkuId };
   }
 
   const pickup = snap.orders.find((o) => o.type === "pickup" && o.status === "readyForHandoff");

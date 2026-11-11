@@ -310,10 +310,10 @@ export function layoutCustomerSpeech(
 
 export const TV_COUNT = 3;
 export const TV_COLS = 3;
-export const STRAINS_PER_TV = 3;
+export const ITEMS_PER_TV = 3;
 /**
  * Counter-and-up growth after the speech-band reclaim: TVs enlarge with the rest of the
- * wall band (not TV-only). Full scale (no 0.95 trim) so each strain row gets a taller hit.
+ * wall band (not TV-only). Full scale (no 0.95 trim) so each item row gets a taller hit.
  */
 const TV_BASE_W = 304;
 const TV_BASE_H = 220;
@@ -324,7 +324,7 @@ export const TV_H = Math.round(TV_BASE_H * TV_SCALE);
 /** Chassis-to-chassis wall; ~32px of plaster shows after the 4px sit-on-wall reveal. */
 export const TV_GAP_X = 40;
 export const TV_GAP_Y = 0;
-/** Dark bezel / recessed-glass inset. Keep strain slots inside this. */
+/** Dark bezel / recessed-glass inset. Keep item slots inside this. */
 export const TV_BEZEL = Math.round(16 * TV_SCALE);
 export const TV_GRID_W = TV_COLS * TV_W + (TV_COLS - 1) * TV_GAP_X;
 export const CEILING_POT_LEFT = 150;
@@ -422,28 +422,28 @@ export function tvPos(index: number): { x: number; y: number } {
   };
 }
 
-export function strainSlotH(): number {
-  return Math.floor((TV_H - TV_BEZEL * 2) / STRAINS_PER_TV);
+export function itemSlotH(): number {
+  return Math.floor((TV_H - TV_BEZEL * 2) / ITEMS_PER_TV);
 }
 
-export function strainPos(index: number): { x: number; y: number } {
-  const tv = Math.floor(index / STRAINS_PER_TV);
-  const slot = index % STRAINS_PER_TV;
+export function itemPos(index: number): { x: number; y: number } {
+  const tv = Math.floor(index / ITEMS_PER_TV);
+  const slot = index % ITEMS_PER_TV;
   const p = tvPos(tv);
-  const slotH = strainSlotH();
+  const slotH = itemSlotH();
   const blockTop = p.y - TV_H / 2 + TV_BEZEL;
   return { x: p.x, y: blockTop + slot * slotH + slotH / 2 };
 }
 
 /**
- * Menu-row label anchor — {@link strainPos} plus a small downward nudge so cap-height
- * type reads centred inside each coloured strain slot (centre origin sits visually high).
+ * Menu-row label anchor — {@link itemPos} plus a small downward nudge so cap-height
+ * type reads centred inside each coloured item slot (centre origin sits visually high).
  */
-export const STRAIN_LABEL_OPTICAL_Y = 3;
+export const ITEM_LABEL_OPTICAL_Y = 3;
 
-export function strainLabelPos(index: number): { x: number; y: number } {
-  const p = strainPos(index);
-  return { x: p.x, y: p.y + STRAIN_LABEL_OPTICAL_Y };
+export function itemLabelPos(index: number): { x: number; y: number } {
+  const p = itemPos(index);
+  return { x: p.x, y: p.y + ITEM_LABEL_OPTICAL_Y };
 }
 
 /** Five cans, even gaps across the ceiling band. Not locked to TV centers. */

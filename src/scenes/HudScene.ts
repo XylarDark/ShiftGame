@@ -447,15 +447,15 @@ export class HudScene extends Phaser.Scene {
     this.idCard.idHint.setAlpha(1);
     if (drop.idCard) {
       const card = drop.idCard;
-      const idTextKey = `${card.name}|${card.dob}|${card.ageOk ? 1 : 0}|${card.idNumber}|${card.expires}`;
+      const idTextKey = `${card.name}|${card.dob}|${card.matches ? 1 : 0}|${card.idNumber}|${card.expires}`;
       if (idTextKey !== this.lastIdTextKey) {
         this.lastIdTextKey = idTextKey;
         this.idCard.idName.setText(card.name.toUpperCase());
-        this.idCard.idDob.setText(`${card.dob}   ·   ${card.ageOk ? "19+" : "UNDER 19"}`);
+        this.idCard.idDob.setText(card.dob);
         this.idCard.idNumber.setText(card.idNumber);
         this.idCard.idExpiry.setText(card.expires);
-        this.idCard.idHint.setText(card.ageOk ? "Tap the card to confirm 19+" : "UNDER 19 — tap to deny and leave");
-        this.idCard.idBg.setStrokeStyle(6, card.ageOk ? ID_OK_INK : ID_DENY_INK);
+        this.idCard.idHint.setText(card.matches ? "Name matches — tap the card to confirm" : "WRONG NAME — tap to deny and leave");
+        this.idCard.idBg.setStrokeStyle(6, card.matches ? ID_OK_INK : ID_DENY_INK);
       }
       applyPortraitTexture(this.idCard.idPhoto, drop.customerLook ?? 0);
       this.idCard.idPhoto.setDisplaySize(ID_PHOTO_W, ID_PHOTO_H);
@@ -565,7 +565,7 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
-  /** Shop ORDERS and strain chips must not paint through Door while the scene sleeps. */
+  /** Shop ORDERS and item chips must not paint through Door while the scene sleeps. */
   private syncShopVisibility(snap: SimSnapshot): void {
     const show = snap.playerRole === "keyLead";
     if (show === this.lastShopSceneVisible) return;

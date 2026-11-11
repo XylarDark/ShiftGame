@@ -18,6 +18,7 @@ function order(partial: Partial<Order> & Pick<Order, "type">): Order {
     createdAtGameMs: 0,
     customerName: "Ash Park",
     idAge: 24,
+    idMatches: true,
     ...partial,
   };
 }

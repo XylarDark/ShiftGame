@@ -21,6 +21,7 @@ function order(partial: Partial<Order> & Pick<Order, "id" | "type" | "status">):
     createdAtGameMs: 0,
     customerName: "Pat",
     idAge: 22,
+    idMatches: true,
     ...partial,
   };
 }
@@ -48,9 +49,9 @@ describe("shiftResults", () => {
     );
   });
 
-  it("flags licence risk when under-19 fails exist", () => {
+  it("flags an ID review when mismatched-ID handoffs were refused", () => {
     const b = { inStore: 2, pickups: 0, deliveriesOnTime: 1, deliveriesLate: 0, fails: 1 };
-    expect(shiftVerdict(b, 1)).toMatch(/Licence risk/);
+    expect(shiftVerdict(b, 1)).toMatch(/ID review/);
     expect(shiftVerdict({ ...b, fails: 0 }, 0)).toMatch(/Clean shift/);
   });
 

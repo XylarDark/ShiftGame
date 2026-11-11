@@ -121,9 +121,9 @@ export function generateTextures(scene: Phaser.Scene, crewSeed: number = Date.no
   stampKindling(scene, "tex-driver-sit", 120, 31, DRIVER_MARK_PX, 120);
   stampKindling(scene, "tex-keylead", 96, 208, 23, 120);
   receipt(scene);
-  jar(scene, "tex-flower", 0x4a8a52, 0x3a2a18, true);
-  jar(scene, "tex-edible", 0xc48496, 0x5a3040, false);
-  jar(scene, "tex-preroll", 0xc4964a, 0x5a4020, false);
+  jar(scene, "tex-pantry", 0x4a8a52, 0x3a2a18);
+  jar(scene, "tex-treat", 0xc48496, 0x5a3040);
+  jar(scene, "tex-home", 0xc4964a, 0x5a4020);
   pin(scene);
   crate(scene);
   phone(scene);
@@ -1373,16 +1373,14 @@ function personSit(scene: Phaser.Scene, look: Look): void {
   });
 }
 
-function jar(scene: Phaser.Scene, key: string, fillCol: number, lid: number, buds: boolean): void {
+/** Plain lidded shop jar with a cream label band; no contents drawn. */
+function jar(scene: Phaser.Scene, key: string, fillCol: number, lid: number): void {
   bake(scene, key, 80, 112, (g) => {
     cells(g, 4, 25, 12, 2, Pal.shadow);
     cells(g, 5, 8, 10, 17, Pal.creamSoft);
     cells(g, 6, 10, 8, 14, fillCol);
     cells(g, 6, 10, 2, 12, 0xffffff);
-    if (buds) {
-      cells(g, 8, 14, 3, 3, Pal.leafDark);
-      cells(g, 11, 17, 2, 2, fillCol);
-    }
+    cells(g, 6, 15, 8, 4, Pal.creamSoft);
     cells(g, 4, 6, 12, 4, lid);
     cells(g, 6, 3, 8, 4, lid);
     cells(g, 7, 3, 6, 1, 0xffffff);

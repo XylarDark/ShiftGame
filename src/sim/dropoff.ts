@@ -1,9 +1,13 @@
+import { mismatchedName } from "./names";
+
 export type DropoffPhase = "atCurb" | "calling" | "atDoor";
 
 export interface IdCard {
+  /** Name printed on the card. Differs from the order's name when `matches` is false. */
   name: string;
   dob: string;
-  ageOk: boolean;
+  /** True when the card's name matches the order, so the handoff can go ahead. */
+  matches: boolean;
   age: number;
   /** Printed licence number. Derived from the same identity, so it never shifts. */
   idNumber: string;
@@ -40,8 +44,11 @@ export interface DropoffView {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** Legal age for a completed drop — 19 and older. */
-export const DROPOFF_MIN_AGE = 19;
+/** Youngest age printed on a doorstep ID. Ages only feed the DOB and the look hash. */
+export const ID_MIN_AGE = 19;
+
+/** About one doorstep in this many shows an ID whose name doesn't match the order. */
+export const ID_MISMATCH_ONE_IN = 4;
 
 export function emptyDropoff(): DropoffView {
   return {
@@ -77,23 +84,31 @@ export function hashSeed(seed: string): number {
   return h >>> 0;
 }
 
-/** About 1 in 4 customers are under 19. Same seed always yields the same age. */
+/** Printed age for a customer's ID. Same seed always yields the same age. */
 export function ageForSeed(seed: string): number {
   const h = hashSeed(seed);
-  if (h % 4 === 0) return 16 + (h % 3);
-  return DROPOFF_MIN_AGE + (h % 28);
+  return ID_MIN_AGE + (h % 28);
 }
 
-export function idCardFor(name: string, ageOrSeed: number | string): IdCard {
+/**
+ * Whether the customer's ID will match the order: about 1 in 4 doorsteps show a
+ * card with someone else's surname, and the courier has to refuse the handoff.
+ * Same seed always yields the same answer.
+ */
+export function idMatchesForSeed(seed: string): boolean {
+  return hashSeed(seed) % ID_MISMATCH_ONE_IN !== 0;
+}
+
+export function idCardFor(name: string, ageOrSeed: number | string, matches = true): IdCard {
   const age = typeof ageOrSeed === "number" ? ageOrSeed : ageForSeed(`${ageOrSeed}:${name}`);
   const h = hashSeed(`${name}:${age}`);
   const year = 2026 - age;
   const day = 1 + (h % 28);
   const month = MONTHS[(h >>> 8) % 12]!;
   return {
-    name,
+    name: matches ? name : mismatchedName(name, h),
     dob: `${day} ${month} ${year}`,
-    ageOk: age >= DROPOFF_MIN_AGE,
+    matches,
     age,
     idNumber: licenceNumber(h),
     expires: `${day} ${month} ${2027 + ((h >>> 16) % 5)}`,

@@ -23,8 +23,10 @@ export interface Order {
   arriveAtGameMs?: number;
   destinationId?: string;
   customerName: string;
-  /** Frozen at spawn so a drop is not randomly 19+ then underage. */
+  /** Printed ID age, frozen at spawn. Feeds the card's DOB and the customer's look. */
   idAge: number;
+  /** Frozen at spawn: whether the doorstep ID's name matches this order. */
+  idMatches: boolean;
   late?: boolean;
 }
 

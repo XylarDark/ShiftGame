@@ -23,7 +23,7 @@ import {
   PASS_WINDOW,
   SILL_H,
   SILL_Y,
-  STRAINS_PER_TV,
+  ITEMS_PER_TV,
   TV_BEZEL,
   TV_COUNT,
   TV_H,
@@ -272,10 +272,10 @@ function tvBezel(g: Phaser.GameObjects.Graphics, left: number, top: number, w: n
   fill(g, glassL + PX, glassT + PX, glassW - PX * 2, PX * 2, 0x1a2820, 0.42);
   fill(g, glassL + PX * 2, glassT + PX, Math.floor(glassW * 0.36), PX, 0xffffff, 0.07);
 
-  const slotH = Math.floor(glassH / STRAINS_PER_TV);
+  const slotH = Math.floor(glassH / ITEMS_PER_TV);
   const divL = glassL + PX * 2;
   const divW = glassW - PX * 4;
-  for (let s = 1; s < STRAINS_PER_TV; s++) {
+  for (let s = 1; s < ITEMS_PER_TV; s++) {
     fill(g, divL, glassT + s * slotH, divW, PX, 0x1a2a22);
   }
 }
@@ -1002,35 +1002,33 @@ export function drawShopInterior(scene: Phaser.Scene): ShopStaticBake {
 }
 
 /** Half-widths (logical px) from leaflet base to tip — fat mid-blade, fine point. */
-const LEAFLET_PROFILE = [1, 2, 3, 4, 4, 4, 3, 3, 2, 1];
+/** Half-widths (in PX) of a snake-plant blade, tip first, widest near the soil. */
+const BLADE_PROFILE = [1, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2];
 
 /**
- * One serrated fan leaflet, stepped along (dirX, dirY) from its base. Alternate
- * rows carry a tooth so the silhouette reads as a cannabis blade, and every row
- * gets a dark side edge so overlapping leaflets stay three separate leaves.
+ * One upright snake-plant blade rising from (baseX, baseY) to `height`, leaning by
+ * `lean` px at the tip. Gold rims and a pale centre band keep blades readable.
  */
-function fanLeaflet(
+function uprightBlade(
   g: Phaser.GameObjects.Graphics,
   baseX: number,
   baseY: number,
-  dirX: number,
-  dirY: number,
-  span: number,
+  height: number,
+  lean: number,
 ): void {
-  const step = span / LEAFLET_PROFILE.length;
-  LEAFLET_PROFILE.forEach((units, i) => {
-    const hw = units * PX;
-    const tooth = i % 2 === 0 ? PX : 0;
-    const x = baseX + dirX * step * i;
-    const y = baseY + dirY * step * i;
-    const half = hw + tooth;
-    fill(g, x - half - PX, y, (half + PX) * 2, step + PX, Pal.leafDark);
+  const step = height / BLADE_PROFILE.length;
+  BLADE_PROFILE.forEach((units, i) => {
+    const half = units * PX;
+    const t = 1 - i / BLADE_PROFILE.length;
+    const x = baseX + lean * t;
+    const y = baseY - height + step * i;
+    fill(g, x - half - PX, y, (half + PX) * 2, step + PX, Pal.amber, 0.85);
     fill(g, x - half, y, half * 2, step + PX, Pal.leaf);
-    fill(g, x - PX, y, PX * 2, step + PX, Color.leafBright, 0.45);
+    fill(g, x - PX, y, PX * 2, step + PX, Color.leafBright, 0.35);
   });
 }
 
-/** Three-leaf planter on the counter, left of the key lead. */
+/** Snake plant on the counter, left of the key lead. */
 function drawCounterPlant(g: Phaser.GameObjects.Graphics, cx: number, footY: number): void {
   const rimW = 68;
   const rimH = 14;
@@ -1049,13 +1047,13 @@ function drawCounterPlant(g: Phaser.GameObjects.Graphics, cx: number, footY: num
   fill(g, cx - rimW / 2 + 8, rimTop + rimH - 4, rimW - 16, 4, Pal.rustDark);
   fill(g, cx - 24, rimTop + 4, 48, 6, Pal.shadow);
 
-  const stemTop = rimTop - 56;
-  fill(g, cx - 4, stemTop, 8, rimTop - stemTop + 4, Pal.leafDark);
-  fill(g, cx - 4, stemTop, 4, rimTop - stemTop + 4, Pal.leaf, 0.5);
-  // Side blades spread from lower on the stem, so the trio fans out cleanly.
-  fanLeaflet(g, cx - 16, stemTop + 24, -0.62, -0.8, 64);
-  fanLeaflet(g, cx + 16, stemTop + 24, 0.62, -0.8, 64);
-  fanLeaflet(g, cx, stemTop, 0, -1, 76);
+  // Upright blades of mixed height straight out of the soil; no stem, no fan.
+  const soil = rimTop + 6;
+  uprightBlade(g, cx - 20, soil, 50, -6);
+  uprightBlade(g, cx + 20, soil, 54, 6);
+  uprightBlade(g, cx - 8, soil, 74, -3);
+  uprightBlade(g, cx + 8, soil, 66, 4);
+  uprightBlade(g, cx, soil, 84, 0);
 }
 
 export function drawShopCounter(scene: Phaser.Scene): {
