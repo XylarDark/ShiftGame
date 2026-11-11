@@ -603,7 +603,7 @@ export class GameSim {
     if (this.shiftEnded) return;
     switch (click.type) {
       case "keyLead":
-        this.setOrdersNotice("Pick a flashing ticket, then the strain.");
+        this.setOrdersNotice("Pick a flashing ticket, then the item.");
         return;
       case "bagRack":
         this.packSelected();
@@ -852,7 +852,7 @@ export class GameSim {
   private packSelected(): void {
     const order = this.selectedTicket();
     if (!order) {
-      this.setOrdersNotice("Tap a flashing ticket, then the strain.");
+      this.setOrdersNotice("Tap a flashing ticket, then the item.");
       return;
     }
     if (this.keyLeadPhase !== "idle") {
@@ -861,7 +861,7 @@ export class GameSim {
     }
     if (!this.handSkuId) {
       const sku = skuById(this.catalog, order.skuId);
-      this.setOrdersNotice(`Tap ${sku?.name ?? "the strain"} on the wall first.`);
+      this.setOrdersNotice(`Tap ${sku?.name ?? "the item"} on the wall first.`);
       return;
     }
     if (this.handSkuId !== order.skuId) {
@@ -2040,10 +2040,10 @@ export class GameSim {
       return `TV  ·  tap ${sku?.name ?? ""} on the wall`;
     }
     if (order.type === "pickup") {
-      return `PICKUP  ·  ${order.customerName}  ·  ${sku?.name ?? ""} — tap ticket, then the strain, then a bag`;
+      return `PICKUP  ·  ${order.customerName}  ·  ${sku?.name ?? ""} — tap ticket, then the item, then a bag`;
     }
     if (order.status === "queued") {
-      return `DELIVER  ${destLabel(order)}  ·  ${order.customerName}  ·  ${sku?.name ?? ""} — tap ticket, then the strain, then a bag`;
+      return `DELIVER  ${destLabel(order)}  ·  ${order.customerName}  ·  ${sku?.name ?? ""} — tap ticket, then the item, then a bag`;
     }
     return `DELIVER  ${destLabel(order)}  ·  ${order.customerName}  ·  ${sku?.name ?? ""}`;
   }

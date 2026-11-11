@@ -10,7 +10,7 @@ const ADJECTIVES = [
   "Zesty",
   "Polar",
   "Ember",
-  "Kindled",
+  "Amber",
   "Hazy",
   "Sparkling",
   "Midnight",

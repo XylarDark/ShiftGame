@@ -39,13 +39,12 @@ export function portfolioManifest(outDir: string, portfolio: boolean): Plugin {
   };
 }
 
-/** Post-build sanity check: embed bundle must not ship Kindling player copy. */
-export function portfolioEmbedGuard(outDir: string, portfolio: boolean): Plugin {
+/** Post-build sanity check: no build (main site or embed) may ship Kindling player copy. */
+export function portfolioEmbedGuard(outDir: string, _portfolio: boolean): Plugin {
   return {
     name: "portfolio-embed-guard",
     apply: "build",
     closeBundle() {
-      if (!portfolio) return;
       const indexPath = join(outDir, "index.html");
       const manifestPath = join(outDir, "manifest.webmanifest");
       let html: string;
@@ -60,6 +59,8 @@ export function portfolioEmbedGuard(outDir: string, portfolio: boolean): Plugin 
         /Turn your phone sideways to run Kindling/,
         /<span>Kindling<\/span>/,
         /Kindling Cannabis/,
+        /content="Kindling"/,
+        /One Kindling shift/,
       ];
       for (const pattern of forbidden) {
         if (pattern.test(html)) {
